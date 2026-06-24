@@ -1,0 +1,77 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
+  color: var(--color-text-primary);
+  background: var(--color-bg-layout);
+}
+
+.page-header {
+  margin-bottom: var(--spacing-lg);
+}
+
+.page-header__title {
+  margin: 0 0 4px;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.page-header__desc {
+  margin: 0;
+  font-size: 14px;
+  color: var(--color-text-secondary);
+}
+
+.table-wrap {
+  background: var(--color-bg-container);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+}
+
+.search-bar {
+  margin-bottom: var(--spacing-md);
+}
+
+/* 筛选栏按钮顺序：展开 → 查询 → 重置 */
+.search-bar .das-search-bar-button-group {
+  display: flex;
+}
+
+.search-bar .das-search-bar-button-group .expand-group {
+  order: -2;
+  margin-left: 0;
+  margin-right: 12px;
+}
+
+.search-bar .das-search-bar-button-group .button-group {
+  display: flex;
+}
+
+.search-bar .das-search-bar-button-group .button-group .ant-btn-primary {
+  order: -1;
+}
+
+.form-section-title {
+  margin: 0 0 16px;
+  padding-left: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  border-left: 3px solid var(--color-primary);
+}
+
+.form-section {
+  margin-bottom: 8px;
+}
