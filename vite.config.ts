@@ -6,7 +6,8 @@ import { AntDesignVueResolver } from 'unplugin-vue-components/resolvers';
 import Components from 'unplugin-vue-components/vite';
 import { defineConfig } from 'vite';
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
+  base: mode === 'pages' ? '/project-qingpu-pc/' : '/',
   plugins: [
     vue(),
     AutoImport({
@@ -36,4 +37,4 @@ export default defineConfig({
       }
     }
   }
-});
+}));

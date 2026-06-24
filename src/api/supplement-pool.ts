@@ -1,4 +1,5 @@
-import request from '@/api/request';
+import { mockDelay } from '@/mock/delay';
+import { projectStore } from '@/mock/project-store';
 import type { OverviewStats } from '@/types/overview';
 import type {
   AuditPayload,
@@ -10,25 +11,38 @@ import type {
 
 export const projectsApi = {
   getList: (params: SupplementProjectQuery) =>
-    request.get<never, SupplementProjectItem[]>('/projects', { params }),
+    mockDelay(projectStore.list(params)),
 
-  getById: (id: string) => request.get<never, SupplementProjectItem>(`/projects/${id}`),
+  getById: (id: string) => {
+    const item = projectStore.getById(id);
+    if (!item) return Promise.reject(new Error('项目不存在'));
+    return mockDelay(item);
+  },
 
   create: (data: SupplementProjectForm & { poolStage?: PoolStage }) =>
-    request.post<never, SupplementProjectItem>('/projects', data),
+    mockDelay(projectStore.create(data, data.poolStage || 'supplement')),
 
-  update: (id: string, data: Partial<SupplementProjectForm>) =>
-    request.put<never, SupplementProjectItem>(`/projects/${id}`, data),
+  update: (id: string, data: Partial<SupplementProjectForm>) => {
+    const item = projectStore.update(id, data);
+    if (!item) return Promise.reject(new Error('项目不存在'));
+    return mockDelay(item);
+  },
 
-  audit: (id: string, payload: AuditPayload) =>
-    request.post<never, SupplementProjectItem>(`/projects/${id}/audit`, payload),
+  audit: (id: string, payload: AuditPayload) => {
+    const item = projectStore.audit(id, payload);
+    if (!item) return Promise.reject(new Error('项目不存在'));
+    return mockDelay(item);
+  },
 
-  transfer: (id: string, poolStage: PoolStage) =>
-    request.post<never, SupplementProjectItem>(`/projects/${id}/transfer`, { poolStage })
+  transfer: (id: string, poolStage: PoolStage) => {
+    const item = projectStore.transferPool(id, poolStage);
+    if (!item) return Promise.reject(new Error('项目不存在'));
+    return mockDelay(item);
+  }
 };
 
 export const overviewApi = {
-  getStats: () => request.get<never, OverviewStats>('/overview/stats')
+  getStats: () => mockDelay(projectStore.getOverview() as OverviewStats)
 };
 
 /** @deprecated 使用 projectsApi */
