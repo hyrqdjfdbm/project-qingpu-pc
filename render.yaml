@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: project-qingpu-pc
+    runtime: node
+    plan: free
+    buildCommand: npm install && npm run build:prod
+    startCommand: npm run start:prod
+    envVars:
+      - key: NODE_ENV
+        value: production

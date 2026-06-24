@@ -8,6 +8,8 @@
     "dev:server": "npm run dev --prefix server",
     "dev:all": "npm run dev --prefix server & vite",
     "build": "vue-tsc -b && vite build",
+    "build:prod": "npm run build && npm install --prefix server --omit=dev",
+    "start:prod": "NODE_ENV=production node server/src/index.js",
     "preview": "vite preview"
   },
   "dependencies": {
