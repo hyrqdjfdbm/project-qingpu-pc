@@ -98,6 +98,8 @@ export interface ActivityProjectLink {
   selectedTaskIds: string[];
   /** 该项目走访情况 */
   situation: string;
+  /** 项目办督帮：该项目现场图片 */
+  siteImages?: RouteActivityFile[];
 }
 
 export interface RouteActivityFile {
@@ -119,8 +121,6 @@ export interface RouteActivityRecord {
   projects: ActivityProjectLink[];
   /** 市领导督帮：领导层级 */
   leaderLevel?: LeaderLevel;
-  /** 项目办督帮：现场图片 */
-  siteImages?: RouteActivityFile[];
   createdAt: string;
   updatedAt: string;
 }
@@ -132,7 +132,6 @@ export interface RouteActivityFormPayload {
   visitTime: string;
   projects: ActivityProjectLink[];
   leaderLevel?: LeaderLevel;
-  siteImages?: RouteActivityFile[];
 }
 
 export interface RouteActivityQuery {

@@ -97,11 +97,10 @@ const columns = computed<TableColumnType[]>(() => {
     });
   }
   if (props.kind === 'projectOffice') {
-    cols.splice(-1, 0, {
+    cols.splice(cols.length - 1, 0, {
       title: '现场图片',
       key: 'siteImages',
-      width: 100,
-      customCell: activityCell
+      width: 120
     });
   }
   cols.push({
@@ -379,7 +378,7 @@ function downloadSchemeFile(file: RouteActivityFile) {
             <span v-else class="empty-cell">—</span>
           </template>
           <template v-else-if="column.key === 'siteImages'">
-            {{ (row as FlatActivityRow).record.siteImages?.length ?? 0 }} 张
+            {{ (row as FlatActivityRow).project?.siteImages?.length ?? 0 }} 张
           </template>
           <template v-else-if="column.key === 'updatedAt'">
             {{ (row as FlatActivityRow).record.updatedAt }}

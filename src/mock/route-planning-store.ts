@@ -524,10 +524,13 @@ const records: RouteActivityRecord[] = [
         projectName: '徐泾北社区公共服务设施补短板项目',
         selectedProblemIds: ['p3-1'],
         selectedTaskIds: ['t3-1', 't3-2'],
-        situation: '现场核查降噪措施落实情况，围挡已加高。'
+        situation: '现场核查降噪措施落实情况，围挡已加高。',
+        siteImages: [
+          { name: '徐泾北-现场围挡.jpg', size: 512000 },
+          { name: '徐泾北-主体施工.jpg', size: 468000 }
+        ]
       }
     ],
-    siteImages: [{ name: '现场围挡.jpg', size: 512000 }],
     createdAt: offsetTime(-8),
     updatedAt: offsetTime(-8)
   }
@@ -572,10 +575,10 @@ export const routePlanningStore = {
       projects: payload.projects.map((p) => ({
         ...p,
         selectedProblemIds: [...p.selectedProblemIds],
-        selectedTaskIds: [...p.selectedTaskIds]
+        selectedTaskIds: [...p.selectedTaskIds],
+        siteImages: p.siteImages ? [...p.siteImages] : undefined
       })),
       leaderLevel: payload.leaderLevel,
-      siteImages: payload.siteImages ? [...payload.siteImages] : undefined,
       createdAt: now,
       updatedAt: now
     };
@@ -592,10 +595,10 @@ export const routePlanningStore = {
     item.projects = payload.projects.map((p) => ({
       ...p,
       selectedProblemIds: [...p.selectedProblemIds],
-      selectedTaskIds: [...p.selectedTaskIds]
+      selectedTaskIds: [...p.selectedTaskIds],
+      siteImages: p.siteImages ? [...p.siteImages] : undefined
     }));
     item.leaderLevel = payload.leaderLevel;
-    item.siteImages = payload.siteImages ? [...payload.siteImages] : undefined;
     item.updatedAt = padTime();
     return item;
   },

@@ -32,7 +32,8 @@ const emit = defineEmits<{
 const submitting = ref(false);
 const relateProjects = ref<RouteRelateProject[]>([]);
 const schemeFileList = ref<UploadFile[]>([]);
-const siteFileList = ref<UploadFile[]>([]);
+/** 当前草稿项目的现场图片（项目办督帮） */
+const draftSiteFileList = ref<UploadFile[]>([]);
 
 /** 已确认加入的关联项目（逐个添加） */
 const linkedProjects = ref<ActivityProjectLink[]>([]);
@@ -87,6 +88,13 @@ const draftProject = computed(() =>
 
 const beforeUpload: UploadProps['beforeUpload'] = () => false;
 
+/** 无预览地址时的占位图 */
+const siteImageFallback =
+  'data:image/svg+xml;charset=utf-8,' +
+  encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="72" height="72"><rect fill="#f0f0f0" width="72" height="72"/><text x="36" y="40" text-anchor="middle" fill="#8c8c8c" font-size="11">图片</text></svg>`
+  );
+
 watch(
   () => props.open,
   async (open) => {
@@ -108,6 +116,7 @@ watch(
     draft.situation = '';
     draft.selectedProblemIds = [];
     draft.selectedTaskIds = [];
+    draftSiteFileList.value = [];
   }
 );
 
@@ -117,7 +126,7 @@ function resetForm() {
   form.visitTime = undefined;
   linkedProjects.value = [];
   schemeFileList.value = [];
-  siteFileList.value = [];
+  draftSiteFileList.value = [];
   resetDraft();
   showDraftPanel.value = false;
 }
@@ -127,6 +136,7 @@ function resetDraft() {
   draft.situation = '';
   draft.selectedProblemIds = [];
   draft.selectedTaskIds = [];
+  draftSiteFileList.value = [];
 }
 
 function fillForm(record: RouteActivityRecord) {
@@ -138,7 +148,8 @@ function fillForm(record: RouteActivityRecord) {
     projectName: p.projectName,
     situation: p.situation,
     selectedProblemIds: [...p.selectedProblemIds],
-    selectedTaskIds: [...p.selectedTaskIds]
+    selectedTaskIds: [...p.selectedTaskIds],
+    siteImages: p.siteImages ? [...p.siteImages] : undefined
   }));
   schemeFileList.value = record.schemeFiles.map((f, i) => ({
     uid: `scheme-${i}`,
@@ -147,13 +158,7 @@ function fillForm(record: RouteActivityRecord) {
     size: f.size,
     url: f.url
   }));
-  siteFileList.value = (record.siteImages ?? []).map((f, i) => ({
-    uid: `site-${i}`,
-    name: f.name,
-    status: 'done',
-    size: f.size,
-    url: f.url
-  }));
+  draftSiteFileList.value = [];
   showDraftPanel.value = false;
 }
 
@@ -228,13 +233,19 @@ function confirmAddProject() {
     message.warning('请填写走访项目情况');
     return;
   }
+  if (props.kind === 'projectOffice' && !draftSiteFileList.value.length) {
+    message.warning('请为该项目上传现场图片');
+    return;
+  }
 
   linkedProjects.value.push({
     projectId: draft.projectId,
     projectName: draftProject.value.projectName,
     situation: draft.situation.trim(),
     selectedProblemIds: [...draft.selectedProblemIds],
-    selectedTaskIds: [...draft.selectedTaskIds]
+    selectedTaskIds: [...draft.selectedTaskIds],
+    siteImages:
+      props.kind === 'projectOffice' ? toActivityFiles(draftSiteFileList.value) : undefined
   });
 
   message.success(`已添加「${draftProject.value.projectName}」`);
@@ -288,8 +299,11 @@ async function handleSubmit() {
     message.warning('请至少关联并确认添加一个项目');
     return;
   }
-  if (props.kind === 'projectOffice' && !siteFileList.value.length) {
-    message.warning('请上传现场图片');
+  if (
+    props.kind === 'projectOffice' &&
+    linkedProjects.value.some((p) => !p.siteImages?.length)
+  ) {
+    message.warning('每个关联项目都需上传现场图片');
     return;
   }
 
@@ -301,10 +315,10 @@ async function handleSubmit() {
     projects: linkedProjects.value.map((p) => ({
       ...p,
       selectedProblemIds: [...p.selectedProblemIds],
-      selectedTaskIds: [...p.selectedTaskIds]
+      selectedTaskIds: [...p.selectedTaskIds],
+      siteImages: p.siteImages ? [...p.siteImages] : undefined
     })),
-    leaderLevel: props.kind === 'cityLeader' ? form.leaderLevel : undefined,
-    siteImages: props.kind === 'projectOffice' ? toActivityFiles(siteFileList.value) : undefined
+    leaderLevel: props.kind === 'cityLeader' ? form.leaderLevel : undefined
   };
 
   submitting.value = true;
@@ -387,22 +401,6 @@ async function handleSubmit() {
         />
       </a-form-item>
 
-      <a-form-item v-if="kind === 'projectOffice'" label="现场图片" required>
-        <a-upload
-          v-model:file-list="siteFileList"
-          list-type="picture-card"
-          :before-upload="beforeUpload"
-          :disabled="isView"
-          accept="image/*"
-          :max-count="9"
-        >
-          <div v-if="siteFileList.length < 9 && !isView">
-            <PlusOutlined />
-            <div style="margin-top: 8px">上传</div>
-          </div>
-        </a-upload>
-      </a-form-item>
-
       <div class="linked-section">
         <div class="linked-section__head">
           <span class="linked-section__title">关联项目（{{ linkedProjects.length }}）</span>
@@ -440,6 +438,28 @@ async function handleSubmit() {
           <div class="project-block__row">
             <span class="project-block__label">走访情况</span>
             <span>{{ link.situation }}</span>
+          </div>
+          <div v-if="kind === 'projectOffice'" class="project-block__section">
+            <div class="project-block__label">现场图片（{{ link.siteImages?.length ?? 0 }} 张）</div>
+            <div v-if="link.siteImages?.length" class="site-thumbs">
+              <a-image-preview-group>
+                <a-image
+                  v-for="(img, imgIdx) in link.siteImages"
+                  :key="`${img.name}-${imgIdx}`"
+                  :src="img.url || siteImageFallback"
+                  :width="72"
+                  :height="72"
+                  style="object-fit: cover; border-radius: 4px; margin-right: 8px; margin-bottom: 8px"
+                  :alt="img.name"
+                />
+              </a-image-preview-group>
+              <div class="site-thumbs__names">
+                <div v-for="(img, imgIdx) in link.siteImages" :key="`n-${imgIdx}`" class="site-thumbs__name">
+                  {{ img.name }}
+                </div>
+              </div>
+            </div>
+            <div v-else class="empty-tip">未上传</div>
           </div>
           <div class="project-block__section">
             <div class="project-block__label">难题事项</div>
@@ -518,6 +538,22 @@ async function handleSubmit() {
                 :rows="3"
                 placeholder="请填写该项目本次走访情况"
               />
+            </a-form-item>
+
+            <a-form-item v-if="kind === 'projectOffice'" label="现场图片（本项目）" required>
+              <a-upload
+                v-model:file-list="draftSiteFileList"
+                list-type="picture-card"
+                :before-upload="beforeUpload"
+                accept="image/*"
+                :max-count="9"
+              >
+                <div v-if="draftSiteFileList.length < 9">
+                  <PlusOutlined />
+                  <div style="margin-top: 8px">上传</div>
+                </div>
+              </a-upload>
+              <div class="empty-tip" style="margin-top: 4px">每个项目单独上传现场图片，最多 9 张</div>
             </a-form-item>
 
             <a-form-item label="难题事项（勾选本次关联）">
@@ -669,6 +705,24 @@ async function handleSubmit() {
   flex-shrink: 0;
   font-size: 13px;
   margin-bottom: 6px;
+}
+
+.site-thumbs {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.site-thumbs__names {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.site-thumbs__name {
+  font-size: 12px;
+  color: var(--color-text-secondary, #8c8c8c);
+  word-break: break-all;
 }
 
 .issue-card {
