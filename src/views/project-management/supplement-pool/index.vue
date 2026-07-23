@@ -118,13 +118,21 @@ function openDeclare() {
   declareOpen.value = true;
 }
 
+function canEditProject(record: SupplementProjectItem) {
+  return record.status !== 'stored';
+}
+
 function openEdit(record: SupplementProjectItem) {
+  if (!canEditProject(record)) {
+    message.warning('已入库项目不可修改');
+    return;
+  }
   editingItem.value = { ...record };
   declareOpen.value = true;
 }
 
-function openDetail(record: SupplementProjectItem) {
-  viewingItem.value = record;
+async function openDetail(record: SupplementProjectItem) {
+  viewingItem.value = await projectsApi.getById(record.id);
   detailOpen.value = true;
 }
 
@@ -265,7 +273,7 @@ function onTableChange(pag: { current?: number; pageSize?: number }) {
           </template>
           <template v-else-if="column.key === 'operation'">
             <a-button type="link" @click="openDetail(record)">查看详情</a-button>
-            <a-button type="link" @click="openEdit(record)">修改</a-button>
+            <a-button type="link" :disabled="!canEditProject(record)" @click="openEdit(record)">修改</a-button>
             <a-button
               type="link"
               :disabled="record.status !== 'pending'"

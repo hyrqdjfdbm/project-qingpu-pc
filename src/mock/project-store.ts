@@ -92,6 +92,9 @@ export const projectStore = {
   update(id: string, data: Partial<SupplementProjectForm>) {
     const idx = projects.findIndex((p) => p.id === id);
     if (idx < 0) return null;
+    if (projects[idx].poolStage === 'supplement' && projects[idx].status === 'stored') {
+      return null;
+    }
     projects[idx] = {
       ...projects[idx],
       ...data,
@@ -103,10 +106,12 @@ export const projectStore = {
   audit(id: string, { approved, remark }: AuditPayload) {
     const idx = projects.findIndex((p) => p.id === id);
     if (idx < 0) return null;
+    if (projects[idx].status !== 'pending') return null;
+
     projects[idx] = {
       ...projects[idx],
       status: approved ? 'stored' : 'returned',
-      auditRemark: remark
+      auditRemark: remark?.trim() || undefined
     };
     return projects[idx];
   },

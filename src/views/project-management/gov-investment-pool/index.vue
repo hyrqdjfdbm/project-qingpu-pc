@@ -89,8 +89,8 @@ function handleReset() {
   loadList();
 }
 
-function openDetail(record: SupplementProjectItem) {
-  viewingItem.value = record;
+async function openDetail(record: SupplementProjectItem) {
+  viewingItem.value = await projectsApi.getById(record.id);
   detailOpen.value = true;
 }
 

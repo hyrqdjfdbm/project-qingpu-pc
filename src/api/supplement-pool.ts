@@ -1,6 +1,7 @@
 import { mockDelay } from '@/mock/delay';
+import { getProjectOverviewDashboard } from '@/mock/overview-dashboard';
 import { projectStore } from '@/mock/project-store';
-import type { OverviewStats } from '@/types/overview';
+import type { OverviewStats, ProjectOverviewDashboard } from '@/types/overview';
 import type {
   AuditPayload,
   PoolStage,
@@ -24,7 +25,7 @@ export const projectsApi = {
 
   update: (id: string, data: Partial<SupplementProjectForm>) => {
     const item = projectStore.update(id, data);
-    if (!item) return Promise.reject(new Error('项目不存在'));
+    if (!item) return Promise.reject(new Error('项目不存在或已入库不可修改'));
     return mockDelay(item);
   },
 
@@ -42,7 +43,9 @@ export const projectsApi = {
 };
 
 export const overviewApi = {
-  getStats: () => mockDelay(projectStore.getOverview() as OverviewStats)
+  getStats: () => mockDelay(projectStore.getOverview() as OverviewStats),
+  getDashboard: (): Promise<ProjectOverviewDashboard> =>
+    mockDelay(getProjectOverviewDashboard())
 };
 
 /** @deprecated 使用 projectsApi */

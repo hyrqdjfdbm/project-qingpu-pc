@@ -9,14 +9,25 @@ const route = useRoute();
 const router = useRouter();
 
 const selectedKeys = ref<string[]>([route.path]);
-const openKeys = ref<string[]>(['project-management']);
+const openKeys = ref<string[]>(['cockpit', 'budget-draw', 'project-management', 'route-planning', 'meeting-coordination']);
 const collapsed = ref(false);
+
+const isCockpit = computed(() => route.meta.fullscreen === true);
+
+function resolveOpenKey(path: string) {
+  if (path.startsWith('/cockpit')) return ['cockpit'];
+  if (path.startsWith('/budget-unit-draw')) return ['budget-draw'];
+  if (path.startsWith('/project-management')) return ['project-management'];
+  if (path.startsWith('/route-planning')) return ['route-planning'];
+  if (path.startsWith('/meeting-coordination')) return ['meeting-coordination'];
+  return [];
+}
 
 watch(collapsed, (val) => {
   if (val) {
     openKeys.value = [];
-  } else if (route.path.startsWith('/project-management')) {
-    openKeys.value = ['project-management'];
+  } else {
+    openKeys.value = resolveOpenKey(route.path);
   }
 });
 
@@ -24,9 +35,7 @@ watch(
   () => route.path,
   (path) => {
     selectedKeys.value = [path];
-    if (path.startsWith('/project-management')) {
-      openKeys.value = ['project-management'];
-    }
+    openKeys.value = resolveOpenKey(path);
   },
   { immediate: true }
 );
@@ -99,7 +108,7 @@ function onMenuClick({ key }: MenuInfo) {
         </div>
       </a-layout-header>
 
-      <a-layout-content class="layout-content">
+      <a-layout-content :class="['layout-content', { 'layout-content--cockpit': isCockpit }]">
         <RouterView />
       </a-layout-content>
     </a-layout>
@@ -196,5 +205,11 @@ function onMenuClick({ key }: MenuInfo) {
   padding: var(--spacing-lg);
   background: var(--color-bg-layout);
   min-height: calc(100vh - var(--header-height));
+}
+
+.layout-content--cockpit {
+  padding: 0;
+  background: #040d1a;
+  overflow: hidden;
 }
 </style>

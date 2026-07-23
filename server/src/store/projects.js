@@ -291,6 +291,9 @@ export const projectStore = {
   update(id, data) {
     const idx = projects.findIndex((p) => p.id === id);
     if (idx < 0) return null;
+    if (projects[idx].poolStage === 'supplement' && projects[idx].status === 'stored') {
+      return null;
+    }
     projects[idx] = {
       ...projects[idx],
       ...data,

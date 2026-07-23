@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import { getAuditDepartment } from '@/config/audit-workflow';
 import type { SupplementProjectItem } from '@/types/supplement-pool';
 import {
   CONSTRUCTION_NATURE_LABEL,
   POOL_STAGE_LABEL,
   PROJECT_ATTRIBUTE_LABEL,
   PROJECT_CATEGORY_LABEL,
-  PROJECT_STATUS_LABEL,
   PROJECT_TYPE_LABEL,
   SUB_PROJECT_OPTIONS
 } from '@/types/supplement-pool';
@@ -27,6 +27,10 @@ const subProjectLabels = computed(() => {
     .join('、');
 });
 
+const auditDept = computed(() =>
+  props.record ? getAuditDepartment(props.record.projectType) : ''
+);
+
 function close() {
   emit('update:open', false);
 }
@@ -37,8 +41,7 @@ function label(key: string, value: string | undefined) {
     projectType: PROJECT_TYPE_LABEL,
     projectAttribute: PROJECT_ATTRIBUTE_LABEL,
     projectCategory: PROJECT_CATEGORY_LABEL,
-    constructionNature: CONSTRUCTION_NATURE_LABEL,
-    status: PROJECT_STATUS_LABEL
+    constructionNature: CONSTRUCTION_NATURE_LABEL
   };
   return maps[key]?.[value] ?? value;
 }
@@ -59,14 +62,28 @@ function label(key: string, value: string | undefined) {
         <span class="declared-by-bar__value">{{ record.declaredBy || '—' }}</span>
       </div>
 
-      <a-descriptions title="基本信息" :column="2" bordered size="small">
+      <a-descriptions
+        v-if="record.status === 'returned' || record.auditRemark"
+        title="审核信息"
+        :column="2"
+        bordered
+        size="small"
+        class="detail-section detail-section--first"
+      >
+        <a-descriptions-item label="审核部门">{{ auditDept }}</a-descriptions-item>
+        <a-descriptions-item v-if="record.status === 'returned'" label="审核结果">退回</a-descriptions-item>
+        <a-descriptions-item v-if="record.auditRemark" label="审核意见" :span="2">
+          {{ record.auditRemark }}
+        </a-descriptions-item>
+      </a-descriptions>
+
+      <a-descriptions title="基本信息" :column="2" bordered size="small" class="detail-section">
         <a-descriptions-item label="项目名称" :span="2">{{ record.projectName }}</a-descriptions-item>
         <a-descriptions-item label="项目简称">{{ record.projectAbbr || '—' }}</a-descriptions-item>
         <a-descriptions-item label="项目代码">{{ record.projectCode }}</a-descriptions-item>
         <a-descriptions-item label="项目类型">{{ label('projectType', record.projectType) }}</a-descriptions-item>
         <a-descriptions-item label="项目属地">{{ record.projectLocation }}</a-descriptions-item>
         <a-descriptions-item label="总投资（亿元）">{{ record.totalInvestment?.toFixed(2) }}</a-descriptions-item>
-        <a-descriptions-item label="项目状态">{{ label('status', record.status) }}</a-descriptions-item>
         <a-descriptions-item label="责任单位" :span="2">{{ record.responsibleUnits.join('、') }}</a-descriptions-item>
         <a-descriptions-item label="所属库">{{ POOL_STAGE_LABEL[record.poolStage] }}</a-descriptions-item>
         <a-descriptions-item v-if="record.progressPercent != null" label="投资完成率">
@@ -105,9 +122,6 @@ function label(key: string, value: string | undefined) {
         <a-descriptions-item v-if="record.proposalApprovalDate" label="项建书批复完成时间" :span="2">
           {{ record.proposalApprovalDate }}
         </a-descriptions-item>
-        <a-descriptions-item v-if="record.auditRemark" label="审核意见" :span="2">
-          {{ record.auditRemark }}
-        </a-descriptions-item>
       </a-descriptions>
     </div>
   </a-modal>
@@ -143,5 +157,9 @@ function label(key: string, value: string | undefined) {
 
 .detail-section {
   margin-top: 16px;
+}
+
+.detail-section--first {
+  margin-top: 0;
 }
 </style>
