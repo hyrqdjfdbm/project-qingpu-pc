@@ -1,9 +1,12 @@
 import type { RouteRecordRaw } from 'vue-router';
 import {
+  AlertOutlined,
+  AuditOutlined,
   BankOutlined,
   BuildOutlined,
   BulbOutlined,
   CalendarOutlined,
+  CheckCircleOutlined,
   ClusterOutlined,
   DashboardOutlined,
   DatabaseOutlined,
@@ -12,18 +15,37 @@ import {
   FundOutlined,
   FundProjectionScreenOutlined,
   GiftOutlined,
+  PauseCircleOutlined,
+  ReadOutlined,
+  SolutionOutlined,
   TeamOutlined,
+  TrophyOutlined,
   UserSwitchOutlined
 } from '@ant-design/icons-vue';
+
+export interface MenuChild {
+  path: string;
+  title: string;
+  icon: typeof DashboardOutlined;
+}
 
 export interface MenuGroup {
   key: string;
   title: string;
-  children: {
-    path: string;
-    title: string;
-    icon: typeof DashboardOutlined;
-  }[];
+  children: Array<
+    MenuChild | {
+      key: string;
+      title: string;
+      icon: typeof DashboardOutlined;
+      children: MenuChild[];
+    }
+  >;
+}
+
+export function isMenuSubGroup(
+  item: MenuGroup['children'][number]
+): item is { key: string; title: string; icon: typeof DashboardOutlined; children: MenuChild[] } {
+  return 'children' in item && Array.isArray((item as { children?: unknown }).children);
 }
 
 export const menuGroups: MenuGroup[] = [
@@ -39,6 +61,26 @@ export const menuGroups: MenuGroup[] = [
     title: '概算管理',
     children: [
       { path: '/budget-unit-draw', title: '概算单位随机抽取', icon: GiftOutlined }
+    ]
+  },
+  {
+    key: 'reserve-pool',
+    title: '储备库',
+    children: [
+      { path: '/reserve-pool/party-school', title: '党校集中谋划项目', icon: ReadOutlined },
+      { path: '/reserve-pool/department', title: '部门谋划项目', icon: ClusterOutlined },
+      { path: '/reserve-pool/township', title: '乡镇（街道）谋划项目', icon: TeamOutlined },
+      { path: '/reserve-pool/arena', title: '比拼擂台赛项目', icon: TrophyOutlined },
+      { path: '/reserve-pool/element', title: '要素争取项目', icon: FundOutlined },
+      {
+        key: 'reserve-pool-audit',
+        title: '储备库审核',
+        icon: AuditOutlined,
+        children: [
+          { path: '/reserve-pool/audit/first', title: '储备库初审', icon: SolutionOutlined },
+          { path: '/reserve-pool/audit/final', title: '储备库终审', icon: CheckCircleOutlined }
+        ]
+      }
     ]
   },
   {
@@ -78,6 +120,20 @@ export const menuGroups: MenuGroup[] = [
     children: [
       { path: '/meeting-coordination', title: '会议协调事项', icon: ClusterOutlined }
     ]
+  },
+  {
+    key: 'work-suspend',
+    title: '项目停复工情况',
+    children: [
+      { path: '/work-suspend', title: '项目停复工情况', icon: PauseCircleOutlined }
+    ]
+  },
+  {
+    key: 'alert-management',
+    title: '预警管理',
+    children: [
+      { path: '/alert-management', title: '预警管理', icon: AlertOutlined }
+    ]
   }
 ];
 
@@ -94,6 +150,52 @@ export const routes: RouteRecordRaw[] = [
     name: 'BudgetUnitDraw',
     component: () => import('@/views/budget-unit-draw/index.vue'),
     meta: { title: '概算单位随机抽取', icon: GiftOutlined, group: 'budget-draw' }
+  },
+  {
+    path: '/reserve-pool/party-school',
+    name: 'ReservePartySchool',
+    component: () => import('@/views/reserve-pool/party-school/index.vue'),
+    meta: { title: '党校集中谋划项目', icon: ReadOutlined, group: 'reserve-pool' }
+  },
+  {
+    path: '/reserve-pool/department',
+    name: 'ReserveDepartment',
+    component: () => import('@/views/reserve-pool/department/index.vue'),
+    meta: { title: '部门谋划项目', icon: ClusterOutlined, group: 'reserve-pool' }
+  },
+  {
+    path: '/reserve-pool/township',
+    name: 'ReserveTownship',
+    component: () => import('@/views/reserve-pool/township/index.vue'),
+    meta: { title: '乡镇（街道）谋划项目', icon: TeamOutlined, group: 'reserve-pool' }
+  },
+  {
+    path: '/reserve-pool/arena',
+    name: 'ReserveArena',
+    component: () => import('@/views/reserve-pool/arena/index.vue'),
+    meta: { title: '比拼擂台赛项目', icon: TrophyOutlined, group: 'reserve-pool' }
+  },
+  {
+    path: '/reserve-pool/element',
+    name: 'ReserveElement',
+    component: () => import('@/views/reserve-pool/element/index.vue'),
+    meta: { title: '要素争取项目', icon: FundOutlined, group: 'reserve-pool' }
+  },
+  {
+    path: '/reserve-pool/audit',
+    redirect: '/reserve-pool/audit/first'
+  },
+  {
+    path: '/reserve-pool/audit/first',
+    name: 'ReserveAuditFirst',
+    component: () => import('@/views/reserve-pool/audit/first.vue'),
+    meta: { title: '储备库初审', icon: SolutionOutlined, group: 'reserve-pool' }
+  },
+  {
+    path: '/reserve-pool/audit/final',
+    name: 'ReserveAuditFinal',
+    component: () => import('@/views/reserve-pool/audit/final.vue'),
+    meta: { title: '储备库终审', icon: CheckCircleOutlined, group: 'reserve-pool' }
   },
   {
     path: '/project-management/overview',
@@ -178,5 +280,17 @@ export const routes: RouteRecordRaw[] = [
     name: 'MeetingCoordination',
     component: () => import('@/views/meeting-coordination/index.vue'),
     meta: { title: '会议协调事项', icon: ClusterOutlined, group: 'meeting-coordination' }
+  },
+  {
+    path: '/work-suspend',
+    name: 'WorkSuspend',
+    component: () => import('@/views/work-suspend/index.vue'),
+    meta: { title: '项目停复工情况', icon: PauseCircleOutlined, group: 'work-suspend' }
+  },
+  {
+    path: '/alert-management',
+    name: 'AlertManagement',
+    component: () => import('@/views/alert-management/index.vue'),
+    meta: { title: '预警管理', icon: AlertOutlined, group: 'alert-management' }
   }
 ];

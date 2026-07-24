@@ -3,13 +3,23 @@ import { MenuFoldOutlined, MenuUnfoldOutlined, ProjectOutlined } from '@ant-desi
 import type { MenuInfo } from 'ant-design-vue/es/menu/src/interface';
 import { computed, h, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { menuGroups } from '@/router/routes';
+import { menuGroups, isMenuSubGroup } from '@/router/routes';
 
 const route = useRoute();
 const router = useRouter();
 
 const selectedKeys = ref<string[]>([route.path]);
-const openKeys = ref<string[]>(['cockpit', 'budget-draw', 'project-management', 'route-planning', 'meeting-coordination']);
+const openKeys = ref<string[]>([
+  'cockpit',
+  'budget-draw',
+  'reserve-pool',
+  'reserve-pool-audit',
+  'project-management',
+  'route-planning',
+  'meeting-coordination',
+  'work-suspend',
+  'alert-management'
+]);
 const collapsed = ref(false);
 
 const isCockpit = computed(() => route.meta.fullscreen === true);
@@ -17,9 +27,13 @@ const isCockpit = computed(() => route.meta.fullscreen === true);
 function resolveOpenKey(path: string) {
   if (path.startsWith('/cockpit')) return ['cockpit'];
   if (path.startsWith('/budget-unit-draw')) return ['budget-draw'];
+  if (path.startsWith('/reserve-pool/audit')) return ['reserve-pool', 'reserve-pool-audit'];
+  if (path.startsWith('/reserve-pool')) return ['reserve-pool'];
   if (path.startsWith('/project-management')) return ['project-management'];
   if (path.startsWith('/route-planning')) return ['route-planning'];
   if (path.startsWith('/meeting-coordination')) return ['meeting-coordination'];
+  if (path.startsWith('/work-suspend')) return ['work-suspend'];
+  if (path.startsWith('/alert-management')) return ['alert-management'];
   return [];
 }
 
@@ -42,8 +56,14 @@ watch(
 
 const currentTitle = computed(() => {
   for (const group of menuGroups) {
-    const item = group.children.find((c) => c.path === route.path);
-    if (item) return item.title;
+    for (const child of group.children) {
+      if (isMenuSubGroup(child)) {
+        const hit = child.children.find((c) => c.path === route.path);
+        if (hit) return hit.title;
+      } else if (child.path === route.path) {
+        return child.title;
+      }
+    }
   }
   return '';
 });
@@ -53,6 +73,7 @@ function getIcon(icon: { displayName?: string; name?: string }) {
 }
 
 function onMenuClick({ key }: MenuInfo) {
+  if (String(key).startsWith('reserve-pool-audit') && !String(key).startsWith('/')) return;
   router.push(String(key));
 }
 </script>
@@ -82,12 +103,26 @@ function onMenuClick({ key }: MenuInfo) {
         <a-sub-menu v-for="group in menuGroups" :key="group.key">
           <template #icon><ProjectOutlined /></template>
           <template #title>{{ group.title }}</template>
-          <a-menu-item v-for="item in group.children" :key="item.path">
-            <template #icon>
-              <component :is="getIcon(item.icon)" />
-            </template>
-            {{ item.title }}
-          </a-menu-item>
+          <template v-for="item in group.children" :key="isMenuSubGroup(item) ? item.key : item.path">
+            <a-sub-menu v-if="isMenuSubGroup(item)" :key="item.key">
+              <template #icon>
+                <component :is="getIcon(item.icon)" />
+              </template>
+              <template #title>{{ item.title }}</template>
+              <a-menu-item v-for="sub in item.children" :key="sub.path">
+                <template #icon>
+                  <component :is="getIcon(sub.icon)" />
+                </template>
+                {{ sub.title }}
+              </a-menu-item>
+            </a-sub-menu>
+            <a-menu-item v-else :key="item.path">
+              <template #icon>
+                <component :is="getIcon(item.icon)" />
+              </template>
+              {{ item.title }}
+            </a-menu-item>
+          </template>
         </a-sub-menu>
       </a-menu>
     </a-layout-sider>
