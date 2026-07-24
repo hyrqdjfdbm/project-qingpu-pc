@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import {
   HOLIDAY_TYPE_LABEL,
-  WORK_SUSPEND_STATUS_LABEL,
-  getWorkSuspendStatusColor,
   type WorkSuspendItem
 } from '@/types/work-suspend';
 
@@ -23,12 +21,9 @@ function close() {
 <template>
   <a-drawer :open="open" title="停复工详情" :width="680" destroy-on-close @close="close">
     <template v-if="record">
-      <a-space style="margin-bottom: 12px">
-        <a-tag :color="getWorkSuspendStatusColor(record.status)">
-          {{ WORK_SUSPEND_STATUS_LABEL[record.status] }}
-        </a-tag>
-        <span>{{ record.year }}年{{ HOLIDAY_TYPE_LABEL[record.holiday] }}</span>
-      </a-space>
+      <div style="margin-bottom: 12px; color: rgba(0, 0, 0, 0.65)">
+        {{ record.year }}年{{ HOLIDAY_TYPE_LABEL[record.holiday] }}
+      </div>
 
       <a-descriptions title="项目信息" bordered size="small" :column="2">
         <a-descriptions-item label="项目名称" :span="2">{{ record.projectName }}</a-descriptions-item>

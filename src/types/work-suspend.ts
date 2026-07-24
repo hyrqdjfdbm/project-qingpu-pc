@@ -75,7 +75,10 @@ export interface WorkSuspendQuery {
   holiday?: HolidayType;
   projectName?: string;
   responsibleUnit?: string;
-  status?: WorkSuspendStatus;
+  /** 是否停工；未填报的不匹配 true/false */
+  isSuspended?: boolean;
+  /** 是否复工；未填报的不匹配 true/false */
+  isResumed?: boolean;
 }
 
 export interface StopReportPayload {

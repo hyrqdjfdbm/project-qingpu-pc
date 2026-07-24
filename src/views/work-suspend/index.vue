@@ -6,11 +6,8 @@ import { RESPONSIBLE_UNIT_OPTIONS } from '@/types/supplement-pool';
 import {
   HOLIDAY_TYPE_LABEL,
   HOLIDAY_TYPE_OPTIONS,
-  WORK_SUSPEND_STATUS_LABEL,
-  getWorkSuspendStatusColor,
   type HolidayType,
-  type WorkSuspendItem,
-  type WorkSuspendStatus
+  type WorkSuspendItem
 } from '@/types/work-suspend';
 import DailyStaffModal from './components/DailyStaffModal.vue';
 import DetailDrawer from './components/DetailDrawer.vue';
@@ -20,12 +17,18 @@ import StopReportModal from './components/StopReportModal.vue';
 const loading = ref(false);
 const list = ref<WorkSuspendItem[]>([]);
 
+const yesNoOptions = [
+  { value: true, label: '是' },
+  { value: false, label: '否' }
+];
+
 const filters = reactive({
   year: new Date().getFullYear() as number | undefined,
   holiday: undefined as HolidayType | undefined,
   projectName: '',
   responsibleUnit: undefined as string | undefined,
-  status: undefined as WorkSuspendStatus | undefined
+  isSuspended: undefined as boolean | undefined,
+  isResumed: undefined as boolean | undefined
 });
 
 const detailOpen = ref(false);
@@ -42,11 +45,6 @@ const yearOptions = Array.from({ length: 6 }, (_, i) => {
   return { value: y, label: `${y}年` };
 });
 
-const statusOptions = Object.entries(WORK_SUSPEND_STATUS_LABEL).map(([value, label]) => ({
-  value,
-  label
-}));
-
 const columns: TableColumnType<WorkSuspendItem>[] = [
   { title: '年度', key: 'year', width: 80 },
   { title: '节假日', key: 'holiday', width: 90 },
@@ -57,7 +55,6 @@ const columns: TableColumnType<WorkSuspendItem>[] = [
   { title: '停工时间', key: 'suspendRange', width: 200 },
   { title: '是否复工', key: 'isResumed', width: 90 },
   { title: '复工时间', key: 'resumeDate', width: 120 },
-  { title: '填报状态', key: 'status', width: 130 },
   { title: '操作', key: 'operation', width: 280, fixed: 'right' }
 ];
 
@@ -69,7 +66,8 @@ async function loadList() {
       holiday: filters.holiday,
       projectName: filters.projectName || undefined,
       responsibleUnit: filters.responsibleUnit,
-      status: filters.status
+      isSuspended: filters.isSuspended,
+      isResumed: filters.isResumed
     });
   } finally {
     loading.value = false;
@@ -81,7 +79,8 @@ function resetFilters() {
   filters.holiday = undefined;
   filters.projectName = '';
   filters.responsibleUnit = undefined;
-  filters.status = undefined;
+  filters.isSuspended = undefined;
+  filters.isResumed = undefined;
   loadList();
 }
 
@@ -158,13 +157,22 @@ onMounted(loadList);
             :options="RESPONSIBLE_UNIT_OPTIONS"
           />
         </a-form-item>
-        <a-form-item label="填报状态">
+        <a-form-item label="是否停工">
           <a-select
-            v-model:value="filters.status"
+            v-model:value="filters.isSuspended"
             allow-clear
             placeholder="全部"
-            style="width: 150px"
-            :options="statusOptions"
+            style="width: 110px"
+            :options="yesNoOptions"
+          />
+        </a-form-item>
+        <a-form-item label="是否复工">
+          <a-select
+            v-model:value="filters.isResumed"
+            allow-clear
+            placeholder="全部"
+            style="width: 110px"
+            :options="yesNoOptions"
           />
         </a-form-item>
         <a-form-item>
@@ -182,7 +190,7 @@ onMounted(loadList);
         :columns="columns"
         :data-source="list"
         row-key="id"
-        :scroll="{ x: 1400 }"
+        :scroll="{ x: 1300 }"
         :pagination="{ pageSize: 10, showTotal: (t: number) => `共 ${t} 条` }"
       >
         <template #bodyCell="{ column, record: row }">
@@ -229,11 +237,6 @@ onMounted(loadList);
           <template v-else-if="column.key === 'resumeDate'">
             {{ (row as WorkSuspendItem).resumeDate || '—' }}
           </template>
-          <template v-else-if="column.key === 'status'">
-            <a-tag :color="getWorkSuspendStatusColor((row as WorkSuspendItem).status)">
-              {{ WORK_SUSPEND_STATUS_LABEL[(row as WorkSuspendItem).status] }}
-            </a-tag>
-          </template>
           <template v-else-if="column.key === 'operation'">
             <a-space>
               <a-button type="link" size="small" @click="openDetail(row as WorkSuspendItem)">
@@ -245,7 +248,7 @@ onMounted(loadList);
                 size="small"
                 @click="openStop(row as WorkSuspendItem)"
               >
-                填报停工
+                填报停工情况
               </a-button>
               <a-button
                 v-if="(row as WorkSuspendItem).status === 'pendingDaily'"
@@ -261,7 +264,7 @@ onMounted(loadList);
                 size="small"
                 @click="openResume(row as WorkSuspendItem)"
               >
-                填报复工
+                填报复工情况
               </a-button>
             </a-space>
           </template>

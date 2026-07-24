@@ -160,9 +160,14 @@ function cloneItem(item: WorkSuspendItem): WorkSuspendItem {
 function matchQuery(item: WorkSuspendItem, params: WorkSuspendQuery) {
   if (params.year && item.year !== params.year) return false;
   if (params.holiday && item.holiday !== params.holiday) return false;
-  if (params.status && item.status !== params.status) return false;
   if (params.responsibleUnit && item.responsibleUnit !== params.responsibleUnit) return false;
   if (params.projectName && !item.projectName.includes(params.projectName)) return false;
+  if (params.isSuspended !== undefined) {
+    if (item.isSuspended !== params.isSuspended) return false;
+  }
+  if (params.isResumed !== undefined) {
+    if (item.isResumed !== params.isResumed) return false;
+  }
   return true;
 }
 
