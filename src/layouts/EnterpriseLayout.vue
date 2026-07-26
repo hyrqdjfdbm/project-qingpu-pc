@@ -14,6 +14,7 @@ const openKeys = ref<string[]>([
   'budget-draw',
   'reserve-pool',
   'reserve-pool-audit',
+  'supplement-library',
   'project-management',
   'route-planning',
   'meeting-coordination',
@@ -29,6 +30,7 @@ function resolveOpenKey(path: string) {
   if (path.startsWith('/budget-unit-draw')) return ['budget-draw'];
   if (path.startsWith('/reserve-pool/audit')) return ['reserve-pool', 'reserve-pool-audit'];
   if (path.startsWith('/reserve-pool')) return ['reserve-pool'];
+  if (path.startsWith('/supplement-library')) return ['supplement-library'];
   if (path.startsWith('/project-management')) return ['project-management'];
   if (path.startsWith('/route-planning')) return ['route-planning'];
   if (path.startsWith('/meeting-coordination')) return ['meeting-coordination'];

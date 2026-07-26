@@ -84,12 +84,21 @@ export const menuGroups: MenuGroup[] = [
     ]
   },
   {
+    key: 'supplement-library',
+    title: '增补库',
+    children: [
+      { path: '/supplement-library', title: '项目增补', icon: FormOutlined },
+      { path: '/supplement-library/audit/first', title: '增补初审', icon: SolutionOutlined },
+      { path: '/supplement-library/audit/final', title: '增补终审', icon: CheckCircleOutlined }
+    ]
+  },
+  {
     key: 'project-management',
     title: '项目管理',
     children: [
       { path: '/project-management/overview', title: '项目概览', icon: DashboardOutlined },
       { path: '/project-management/planning-pool', title: '谋划库', icon: BulbOutlined },
-      { path: '/project-management/supplement-pool', title: '增补库', icon: DatabaseOutlined },
+      { path: '/project-management/supplement-pool', title: '增补库（在库）', icon: DatabaseOutlined },
       { path: '/project-management/implementation-pool', title: '实施库', icon: BuildOutlined },
       {
         path: '/project-management/gov-investment-pool',
@@ -196,6 +205,24 @@ export const routes: RouteRecordRaw[] = [
     name: 'ReserveAuditFinal',
     component: () => import('@/views/reserve-pool/audit/final.vue'),
     meta: { title: '储备库终审', icon: CheckCircleOutlined, group: 'reserve-pool' }
+  },
+  {
+    path: '/supplement-library',
+    name: 'SupplementLibrary',
+    component: () => import('@/views/supplement-library/index.vue'),
+    meta: { title: '项目增补', icon: FormOutlined, group: 'supplement-library' }
+  },
+  {
+    path: '/supplement-library/audit/first',
+    name: 'SupplementLibraryAuditFirst',
+    component: () => import('@/views/supplement-library/audit/first.vue'),
+    meta: { title: '增补初审', icon: SolutionOutlined, group: 'supplement-library' }
+  },
+  {
+    path: '/supplement-library/audit/final',
+    name: 'SupplementLibraryAuditFinal',
+    component: () => import('@/views/supplement-library/audit/final.vue'),
+    meta: { title: '增补终审', icon: CheckCircleOutlined, group: 'supplement-library' }
   },
   {
     path: '/project-management/overview',
