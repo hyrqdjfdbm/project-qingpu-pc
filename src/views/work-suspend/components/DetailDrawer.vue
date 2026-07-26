@@ -1,10 +1,12 @@
 <script setup lang="ts">
+import { computed } from 'vue';
+import { buildDailyStaffTemplate } from '@/mock/work-suspend-store';
 import {
   HOLIDAY_TYPE_LABEL,
   type WorkSuspendItem
 } from '@/types/work-suspend';
 
-defineProps<{
+const props = defineProps<{
   open: boolean;
   record: WorkSuspendItem | null;
 }>();
@@ -13,8 +15,25 @@ const emit = defineEmits<{
   'update:open': [value: boolean];
 }>();
 
+const dailyStaffRows = computed(() => {
+  const record = props.record;
+  if (!record?.isSuspended) return [];
+  if (record.dailyStaff?.length) return record.dailyStaff;
+  if (record.suspendStartDate && record.suspendEndDate) {
+    return buildDailyStaffTemplate(record.suspendStartDate, record.suspendEndDate);
+  }
+  return [];
+});
+
+const dailyStaffFilled = computed(() => Boolean(props.record?.dailyStaff?.length));
+
 function close() {
   emit('update:open', false);
+}
+
+function yn(v: boolean | undefined) {
+  if (v === undefined) return '—';
+  return v ? '是' : '否';
 }
 </script>
 
@@ -33,11 +52,7 @@ function close() {
       </a-descriptions>
 
       <a-descriptions title="停工情况" bordered size="small" :column="2" style="margin-top: 16px">
-        <a-descriptions-item label="是否停工">
-          {{
-            record.isSuspended === undefined ? '—' : record.isSuspended ? '是' : '否'
-          }}
-        </a-descriptions-item>
+        <a-descriptions-item label="是否停工">{{ yn(record.isSuspended) }}</a-descriptions-item>
         <a-descriptions-item label="停工时间">
           {{
             record.isSuspended
@@ -49,19 +64,36 @@ function close() {
         <a-descriptions-item label="填报时间">{{ record.stopReportedAt || '—' }}</a-descriptions-item>
       </a-descriptions>
 
-      <div v-if="record.dailyStaff?.length" style="margin-top: 16px">
+      <div v-if="record.isSuspended" style="margin-top: 16px">
         <div style="font-weight: 600; margin-bottom: 8px">停工期间每日在岗人数</div>
+        <a-alert
+          v-if="!dailyStaffFilled"
+          type="warning"
+          show-icon
+          style="margin-bottom: 8px"
+          message="尚未填报在岗人数"
+          description="请在列表操作中点击「填报在岗人数」完成填报；下表为停工期间日期清单。"
+        />
         <a-table
           size="small"
           :pagination="false"
           row-key="date"
-          :data-source="record.dailyStaff"
+          :data-source="dailyStaffRows"
           :columns="[
             { title: '日期', dataIndex: 'date', width: 140 },
             { title: '在岗人数', dataIndex: 'count', width: 120 }
           ]"
-        />
-        <div style="margin-top: 8px; color: rgba(0, 0, 0, 0.45); font-size: 12px">
+        >
+          <template #bodyCell="{ column, record: row }">
+            <template v-if="column.dataIndex === 'count'">
+              {{ dailyStaffFilled ? row.count : '—' }}
+            </template>
+          </template>
+        </a-table>
+        <div
+          v-if="dailyStaffFilled"
+          style="margin-top: 8px; color: rgba(0, 0, 0, 0.45); font-size: 12px"
+        >
           填报：{{ record.dailyReportedBy || '—' }} · {{ record.dailyReportedAt || '—' }}
         </div>
       </div>
@@ -74,9 +106,7 @@ function close() {
         :column="2"
         style="margin-top: 16px"
       >
-        <a-descriptions-item label="是否复工">
-          {{ record.isResumed === undefined ? '—' : record.isResumed ? '是' : '否' }}
-        </a-descriptions-item>
+        <a-descriptions-item label="是否复工">{{ yn(record.isResumed) }}</a-descriptions-item>
         <a-descriptions-item label="复工时间">{{ record.resumeDate || '—' }}</a-descriptions-item>
         <a-descriptions-item label="填报人">{{ record.resumeReportedBy || '—' }}</a-descriptions-item>
         <a-descriptions-item label="填报时间">{{ record.resumeReportedAt || '—' }}</a-descriptions-item>

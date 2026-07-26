@@ -85,9 +85,13 @@ function resetFilters() {
   loadList();
 }
 
-function openDetail(record: WorkSuspendItem) {
-  detailRecord.value = record;
+async function openDetail(record: WorkSuspendItem) {
   detailOpen.value = true;
+  try {
+    detailRecord.value = await workSuspendApi.getById(record.id);
+  } catch {
+    detailRecord.value = record;
+  }
 }
 
 function openStop(record: WorkSuspendItem) {
