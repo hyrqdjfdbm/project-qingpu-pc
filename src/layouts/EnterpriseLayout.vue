@@ -19,6 +19,7 @@ const openKeys = ref<string[]>([
   'route-planning',
   'meeting-coordination',
   'work-suspend',
+  'assessment-score',
   'alert-management'
 ]);
 const collapsed = ref(false);
@@ -35,6 +36,7 @@ function resolveOpenKey(path: string) {
   if (path.startsWith('/route-planning')) return ['route-planning'];
   if (path.startsWith('/meeting-coordination')) return ['meeting-coordination'];
   if (path.startsWith('/work-suspend')) return ['work-suspend'];
+  if (path.startsWith('/assessment-score')) return ['assessment-score'];
   if (path.startsWith('/alert-management')) return ['alert-management'];
   return [];
 }

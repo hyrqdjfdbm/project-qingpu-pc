@@ -138,6 +138,14 @@ export const menuGroups: MenuGroup[] = [
     ]
   },
   {
+    key: 'assessment-score',
+    title: '考核评分',
+    children: [
+      { path: '/assessment-score/red-yellow-flag', title: '红黄旗评分', icon: FlagOutlined },
+      { path: '/assessment-score/annual', title: '年度考核', icon: TrophyOutlined }
+    ]
+  },
+  {
     key: 'alert-management',
     title: '预警管理',
     children: [
@@ -313,6 +321,26 @@ export const routes: RouteRecordRaw[] = [
     name: 'WorkSuspend',
     component: () => import('@/views/work-suspend/index.vue'),
     meta: { title: '项目停复工情况', icon: PauseCircleOutlined, group: 'work-suspend' }
+  },
+  {
+    path: '/assessment-score/red-yellow-flag',
+    name: 'AssessmentRedYellowFlag',
+    component: () => import('@/views/assessment-score/red-yellow-flag/index.vue'),
+    meta: {
+      title: '红黄旗评分',
+      icon: FlagOutlined,
+      group: 'assessment-score'
+    }
+  },
+  {
+    path: '/assessment-score/annual',
+    name: 'AssessmentAnnual',
+    component: () => import('@/views/assessment-score/annual/index.vue'),
+    meta: {
+      title: '年度考核',
+      icon: TrophyOutlined,
+      group: 'assessment-score'
+    }
   },
   {
     path: '/alert-management',
