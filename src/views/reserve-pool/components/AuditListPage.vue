@@ -3,11 +3,9 @@ import type { TableColumnType } from 'ant-design-vue';
 import { computed, onMounted, ref } from 'vue';
 import { reservePoolApi } from '@/api/reserve-pool';
 import {
-  RESERVE_FLOW_STATUS_LABEL,
   RESERVE_MODULE_LABEL,
   getReserveProjectName,
   getReserveResponsibleUnit,
-  getReserveStatusColor,
   getReserveTotalInvestment,
   type ReserveProjectItem
 } from '@/types/reserve-pool';
@@ -68,7 +66,6 @@ const columns: TableColumnType<ReserveProjectItem>[] = [
   { title: '总投资（亿元）', key: 'totalInvestment', width: 120, align: 'right' },
   { title: '申报人', key: 'applicant', width: 90 },
   { title: '申报时间', key: 'submittedAt', width: 160 },
-  { title: '流程状态', key: 'status', width: 100 },
   { title: '操作', key: 'operation', width: 180, fixed: 'right' }
 ];
 
@@ -159,11 +156,6 @@ onMounted(loadList);
           </template>
           <template v-else-if="column.key === 'submittedAt'">
             {{ (row as ReserveProjectItem).submittedAt || '—' }}
-          </template>
-          <template v-else-if="column.key === 'status'">
-            <a-tag :color="getReserveStatusColor((row as ReserveProjectItem).status)">
-              {{ RESERVE_FLOW_STATUS_LABEL[(row as ReserveProjectItem).status] }}
-            </a-tag>
           </template>
           <template v-else-if="column.key === 'operation'">
             <a-space>

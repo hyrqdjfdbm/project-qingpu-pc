@@ -18,8 +18,8 @@ const loading = ref(false);
 const list = ref<WorkSuspendItem[]>([]);
 
 const yesNoOptions = [
-  { value: true, label: '是' },
-  { value: false, label: '否' }
+  { value: 'true', label: '是' },
+  { value: 'false', label: '否' }
 ];
 
 const filters = reactive({
@@ -27,8 +27,8 @@ const filters = reactive({
   holiday: undefined as HolidayType | undefined,
   projectName: '',
   responsibleUnit: undefined as string | undefined,
-  isSuspended: undefined as boolean | undefined,
-  isResumed: undefined as boolean | undefined
+  isSuspended: undefined as string | undefined,
+  isResumed: undefined as string | undefined
 });
 
 const detailOpen = ref(false);
@@ -66,8 +66,9 @@ async function loadList() {
       holiday: filters.holiday,
       projectName: filters.projectName || undefined,
       responsibleUnit: filters.responsibleUnit,
-      isSuspended: filters.isSuspended,
-      isResumed: filters.isResumed
+      isSuspended:
+        filters.isSuspended === undefined ? undefined : filters.isSuspended === 'true',
+      isResumed: filters.isResumed === undefined ? undefined : filters.isResumed === 'true'
     });
   } finally {
     loading.value = false;
