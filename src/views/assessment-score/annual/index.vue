@@ -36,10 +36,10 @@ const yearOptions = computed(() => {
 });
 
 const quarterOptions = [
-  { label: '第1季度', value: 1 },
-  { label: '第2季度', value: 2 },
-  { label: '第3季度', value: 3 },
-  { label: '第4季度', value: 4 }
+  { label: '一季度', value: 1 },
+  { label: '二季度', value: 2 },
+  { label: '三季度', value: 3 },
+  { label: '四季度', value: 4 }
 ];
 
 const filteredData = computed(() => {

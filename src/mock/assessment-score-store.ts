@@ -57,14 +57,16 @@ function makeRedYellowDoc(year: number, month: number): AssessmentDocument {
 }
 
 function makeQuarterlyDoc(year: number, quarter: number): AssessmentDocument {
-  const periodLabel = `${year}年第${quarter}季度`;
+  const quarterNames = ['一季度', '二季度', '三季度', '四季度'] as const;
+  const quarterName = quarterNames[quarter - 1];
+  const periodLabel = `${year}年${quarterName}`;
   return {
     id: `qtr-${year}-Q${quarter}`,
     type: 'quarterly',
     periodLabel,
     year,
     quarter,
-    fileName: `季度考核评分表_${year}年Q${quarter}.pdf`,
+    fileName: `季度考核评分表_${year}年${quarterName}.pdf`,
     fileSize: fileSizeFor(`qtr-${year}-${quarter}`),
     generatedAt: quarterlyGenerateAt(year, quarter),
     generateRule: '每季度末系统自动生成并存档'

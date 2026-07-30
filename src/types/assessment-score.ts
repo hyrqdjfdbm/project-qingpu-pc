@@ -4,7 +4,7 @@ export type AssessmentDocType = 'red_yellow_flag' | 'annual' | 'quarterly';
 export interface AssessmentDocument {
   id: string;
   type: AssessmentDocType;
-  /** 考核周期展示，如 2026年6月 / 2026年第2季度 / 2025年度 */
+  /** 考核周期展示，如 2026年6月 / 2026年二季度 / 2025年度 */
   periodLabel: string;
   year: number;
   /** 红黄旗：月份 1-12 */
