@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { MenuFoldOutlined, MenuUnfoldOutlined, ProjectOutlined } from '@ant-design/icons-vue';
 import type { MenuInfo } from 'ant-design-vue/es/menu/src/interface';
-import { computed, h, ref, watch } from 'vue';
+import { computed, h, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { menuGroups, isMenuSubGroup } from '@/router/routes';
+import { getCurrentUser } from '@/mock/current-user';
+import { workbenchStore } from '@/mock/workbench-store';
 
 const route = useRoute();
 const router = useRouter();
@@ -20,11 +22,26 @@ const openKeys = ref<string[]>([
   'meeting-coordination',
   'work-suspend',
   'assessment-score',
-  'alert-management'
+  'two-letters-one-order',
+  'alert-management',
+  'workbench'
 ]);
 const collapsed = ref(false);
 
 const isCockpit = computed(() => route.meta.fullscreen === true);
+
+const workbenchPendingCount = ref(0);
+function refreshWorkbenchBadge() {
+  const userId = getCurrentUser().id;
+  workbenchPendingCount.value = workbenchStore.getPendingCount(userId);
+}
+onMounted(() => {
+  refreshWorkbenchBadge();
+  window.addEventListener('workbench:updated', refreshWorkbenchBadge);
+});
+onUnmounted(() => {
+  window.removeEventListener('workbench:updated', refreshWorkbenchBadge);
+});
 
 function resolveOpenKey(path: string) {
   if (path.startsWith('/cockpit')) return ['cockpit'];
@@ -37,7 +54,9 @@ function resolveOpenKey(path: string) {
   if (path.startsWith('/meeting-coordination')) return ['meeting-coordination'];
   if (path.startsWith('/work-suspend')) return ['work-suspend'];
   if (path.startsWith('/assessment-score')) return ['assessment-score'];
+  if (path.startsWith('/two-letters-one-order')) return ['two-letters-one-order'];
   if (path.startsWith('/alert-management')) return ['alert-management'];
+  if (path.startsWith('/workbench')) return ['workbench'];
   return [];
 }
 
@@ -122,7 +141,15 @@ function onMenuClick({ key }: MenuInfo) {
             </a-sub-menu>
             <a-menu-item v-else :key="item.path">
               <template #icon>
-                <component :is="getIcon(item.icon)" />
+                <a-badge
+                  v-if="item.path === '/workbench'"
+                  :count="workbenchPendingCount"
+                  :show-zero="false"
+                  :offset="[0, 0]"
+                >
+                  <component :is="getIcon(item.icon)" />
+                </a-badge>
+                <component v-else :is="getIcon(item.icon)" />
               </template>
               {{ item.title }}
             </a-menu-item>

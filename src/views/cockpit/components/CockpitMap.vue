@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import * as THREE from 'three';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { CSS2DObject, CSS2DRenderer } from 'three/addons/renderers/CSS2DRenderer.js';
 import {
   getMaxRegionValue,
@@ -34,13 +33,18 @@ let renderer: THREE.WebGLRenderer | null = null;
 let labelRenderer: CSS2DRenderer | null = null;
 let scene: THREE.Scene | null = null;
 let camera: THREE.PerspectiveCamera | null = null;
-let controls: OrbitControls | null = null;
-let animationId = 0;
 let resizeObserver: ResizeObserver | null = null;
 let raycaster: THREE.Raycaster | null = null;
 const pointer = new THREE.Vector2();
 let regionMeshes: THREE.Mesh[] = [];
 let mapGroup: THREE.Group | null = null;
+
+function renderOnce() {
+  if (renderer && labelRenderer && scene && camera) {
+    renderer.render(scene, camera);
+    labelRenderer.render(scene, camera);
+  }
+}
 
 function toShape(points: [number, number][]) {
   const shape = new THREE.Shape();
@@ -139,6 +143,7 @@ function buildMap(regions: QingpuRegionGeo[]) {
   });
 
   scene.add(group);
+  renderOnce();
 }
 
 function buildBaseDecor(group: THREE.Group) {
@@ -183,7 +188,9 @@ function initScene() {
   const h = container.clientHeight;
 
   camera = new THREE.PerspectiveCamera(38, w / h, 0.1, 100);
+  // 固定俯视视角，不做旋转/缩放
   camera.position.set(0, 8.5, 7.8);
+  camera.lookAt(0, 0.2, 0);
 
   renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
   renderer.setSize(w, h);
@@ -195,17 +202,6 @@ function initScene() {
   labelRenderer.setSize(w, h);
   labelRenderer.domElement.className = 'cockpit-map__labels';
   container.appendChild(labelRenderer.domElement);
-
-  controls = new OrbitControls(camera, labelRenderer.domElement);
-  controls.enablePan = false;
-  controls.enableZoom = true;
-  controls.minDistance = 6;
-  controls.maxDistance = 14;
-  controls.minPolarAngle = Math.PI / 5;
-  controls.maxPolarAngle = Math.PI / 2.4;
-  controls.autoRotate = true;
-  controls.autoRotateSpeed = 0.35;
-  controls.target.set(0, 0.2, 0);
 
   scene.add(new THREE.AmbientLight(0x336699, 1.4));
   const keyLight = new THREE.DirectionalLight(0x88ddff, 1.6);
@@ -228,7 +224,7 @@ function initScene() {
   resizeObserver = new ResizeObserver(resize);
   resizeObserver.observe(container);
 
-  animate();
+  renderOnce();
 }
 
 function resize() {
@@ -240,6 +236,18 @@ function resize() {
   camera.updateProjectionMatrix();
   renderer.setSize(w, h);
   labelRenderer.setSize(w, h);
+  renderOnce();
+}
+
+function syncHoverHighlight() {
+  regionMeshes.forEach((mesh) => {
+    const region = mesh.userData.region as QingpuRegionGeo;
+    const mat = mesh.material as THREE.MeshStandardMaterial;
+    const active =
+      activeRegion.value?.name === region.name || hoveredRegion.value?.name === region.name;
+    mat.emissiveIntensity = active ? 0.65 : 0.25;
+  });
+  renderOnce();
 }
 
 function onPointerMove(event: PointerEvent) {
@@ -252,34 +260,22 @@ function onPointerMove(event: PointerEvent) {
 
   raycaster.setFromCamera(pointer, camera);
   const hit = raycaster.intersectObjects(regionMeshes, false)[0];
-  hoveredRegion.value = (hit?.object.userData.region as QingpuRegionGeo) ?? null;
+  const next = (hit?.object.userData.region as QingpuRegionGeo) ?? null;
   container.style.cursor = hit ? 'pointer' : 'default';
+  if (next?.name !== hoveredRegion.value?.name) {
+    hoveredRegion.value = next;
+    syncHoverHighlight();
+  }
 }
 
 function onClick() {
-  if (hoveredRegion.value) activeRegion.value = hoveredRegion.value;
-}
-
-function animate() {
-  animationId = requestAnimationFrame(animate);
-
-  regionMeshes.forEach((mesh) => {
-    const region = mesh.userData.region as QingpuRegionGeo;
-    const mat = mesh.material as THREE.MeshStandardMaterial;
-    const active =
-      activeRegion.value?.name === region.name || hoveredRegion.value?.name === region.name;
-    mat.emissiveIntensity = active ? 0.65 : 0.25;
-  });
-
-  controls?.update();
-  if (renderer && labelRenderer && scene && camera) {
-    renderer.render(scene, camera);
-    labelRenderer.render(scene, camera);
+  if (hoveredRegion.value) {
+    activeRegion.value = hoveredRegion.value;
+    syncHoverHighlight();
   }
 }
 
 function disposeScene() {
-  cancelAnimationFrame(animationId);
   resizeObserver?.disconnect();
   labelRenderer?.domElement.removeEventListener('pointermove', onPointerMove);
   labelRenderer?.domElement.removeEventListener('click', onClick);
@@ -297,13 +293,8 @@ function disposeScene() {
   labelRenderer = null;
   scene = null;
   camera = null;
-  controls = null;
   regionMeshes = [];
   mapGroup = null;
-}
-
-function selectRegion(region: QingpuRegionGeo) {
-  activeRegion.value = region;
 }
 
 onMounted(initScene);

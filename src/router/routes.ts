@@ -15,6 +15,7 @@ import {
   FundOutlined,
   FundProjectionScreenOutlined,
   GiftOutlined,
+  MailOutlined,
   PauseCircleOutlined,
   ReadOutlined,
   SolutionOutlined,
@@ -146,10 +147,26 @@ export const menuGroups: MenuGroup[] = [
     ]
   },
   {
+    key: 'two-letters-one-order',
+    title: '两函一单',
+    children: [
+      { path: '/two-letters-one-order/assign', title: '交办函', icon: MailOutlined },
+      { path: '/two-letters-one-order/remind', title: '提醒函', icon: MailOutlined },
+      { path: '/two-letters-one-order/supervise', title: '督办函', icon: MailOutlined }
+    ]
+  },
+  {
     key: 'alert-management',
     title: '预警管理',
     children: [
       { path: '/alert-management', title: '预警管理', icon: AlertOutlined }
+    ]
+  },
+  {
+    key: 'workbench',
+    title: '工作台',
+    children: [
+      { path: '/workbench', title: '工作台', icon: ReadOutlined }
     ]
   }
 ];
@@ -343,9 +360,33 @@ export const routes: RouteRecordRaw[] = [
     }
   },
   {
+    path: '/two-letters-one-order/assign',
+    name: 'TwoLettersAssign',
+    component: () => import('@/views/two-letters-one-order/assign/index.vue'),
+    meta: { title: '交办函', icon: MailOutlined, group: 'two-letters-one-order' }
+  },
+  {
+    path: '/two-letters-one-order/remind',
+    name: 'TwoLettersRemind',
+    component: () => import('@/views/two-letters-one-order/remind/index.vue'),
+    meta: { title: '提醒函', icon: MailOutlined, group: 'two-letters-one-order' }
+  },
+  {
+    path: '/two-letters-one-order/supervise',
+    name: 'TwoLettersSupervise',
+    component: () => import('@/views/two-letters-one-order/supervise/index.vue'),
+    meta: { title: '督办函', icon: MailOutlined, group: 'two-letters-one-order' }
+  },
+  {
     path: '/alert-management',
     name: 'AlertManagement',
     component: () => import('@/views/alert-management/index.vue'),
     meta: { title: '预警管理', icon: AlertOutlined, group: 'alert-management' }
+  },
+  {
+    path: '/workbench',
+    name: 'Workbench',
+    component: () => import('@/views/workbench/index.vue'),
+    meta: { title: '工作台', icon: ReadOutlined, group: 'workbench' }
   }
 ];
