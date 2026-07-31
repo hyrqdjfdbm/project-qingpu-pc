@@ -17,9 +17,38 @@ import type {
   WorkbenchStatusFilter
 } from '@/types/workbench';
 import { ExclamationCircleOutlined } from '@ant-design/icons-vue';
+import {
+  APP_ROLE_LABEL,
+  getCurrentUser,
+  switchRole,
+  type AppRole
+} from '@/mock/current-user';
 
 const loading = ref(false);
 const tasks = ref<WorkbenchTask[]>([]);
+
+/** 演示：切换身份查看不同角色待办 */
+const demoRoles = [
+  'projectSpecialist',
+  'supervisor',
+  'districtSpecialist',
+  'cityLeader'
+] as const;
+type DemoRole = (typeof demoRoles)[number];
+const demoRoleLabel: Record<DemoRole, string> = {
+  projectSpecialist: APP_ROLE_LABEL.projectSpecialist,
+  supervisor: APP_ROLE_LABEL.supervisor,
+  districtSpecialist: APP_ROLE_LABEL.districtSpecialist,
+  cityLeader: '领导'
+};
+const currentRole = ref<AppRole>(getCurrentUser().role);
+const currentUserLabel = computed(() => {
+  const u = getCurrentUser();
+  const roleLabel = demoRoles.includes(u.role as DemoRole)
+    ? demoRoleLabel[u.role as DemoRole]
+    : APP_ROLE_LABEL[u.role];
+  return `${u.name}（${roleLabel}）`;
+});
 
 const keyword = ref('');
 const sourceModuleFilter = ref<WorkbenchSourceModule | 'all'>('all');
@@ -128,24 +157,43 @@ const detailOpen = ref(false);
 const detailTask = ref<WorkbenchTask | null>(null);
 const submitting = ref(false);
 const reviewOpinion = ref('');
+const reviewResult = ref<'approve' | 'reject'>('approve');
 const confirmNote = ref('');
 
 watch(detailOpen, (open) => {
   if (!open) return;
   reviewOpinion.value = '';
+  reviewResult.value = 'approve';
   confirmNote.value = '';
 });
 
-function openTask(task: any) {
-  detailTask.value = task as WorkbenchTask;
+function openTask(task: WorkbenchTask) {
+  detailTask.value = task;
   detailOpen.value = true;
+}
+
+async function handleRoleChange(role: AppRole) {
+  switchRole(role);
+  currentRole.value = role;
+  resetFilters();
+  await loadTasks();
+  window.dispatchEvent(new CustomEvent('workbench:updated'));
+  const label = demoRoles.includes(role as DemoRole)
+    ? demoRoleLabel[role as DemoRole]
+    : APP_ROLE_LABEL[role];
+  message.success(`已切换为${label}视角`);
+}
+
+function onDemoRoleChange(value: unknown) {
+  if (typeof value === 'string' && (demoRoles as readonly string[]).includes(value)) {
+    void handleRoleChange(value as AppRole);
+  }
 }
 
 async function submitTask() {
   const task = detailTask.value;
   if (!task) return;
 
-  // 简化必填：仅待审核/待确认需要意见
   if (task.status === 'pending_review' && !reviewOpinion.value.trim()) {
     message.warning('请填写审核意见');
     return;
@@ -159,14 +207,25 @@ async function submitTask() {
   try {
     await workbenchApi.processTask(task.id, {
       status: task.status,
-      expectedUpdatedAt: task.updatedAt
+      expectedUpdatedAt: task.updatedAt,
+      reviewResult: task.status === 'pending_review' ? reviewResult.value : undefined,
+      opinion:
+        task.status === 'pending_review'
+          ? reviewOpinion.value.trim()
+          : task.status === 'pending_confirm'
+            ? confirmNote.value.trim()
+            : undefined
     });
-    message.success('已处理完成');
+    message.success(
+      task.status === 'pending_review' && reviewResult.value === 'reject'
+        ? '已退回，已生成专员待改待办'
+        : '已处理完成'
+    );
     detailOpen.value = false;
     await loadTasks();
     window.dispatchEvent(new CustomEvent('workbench:updated'));
-  } catch (e: any) {
-    message.error(e?.message || '处理失败');
+  } catch (e: unknown) {
+    message.error(e instanceof Error ? e.message : '处理失败');
   } finally {
     submitting.value = false;
   }
@@ -178,8 +237,23 @@ onMounted(loadTasks);
 <template>
   <div class="page">
     <div class="page-header">
-      <h2 class="page-title">个人任务中心</h2>
-      <p class="page-desc">集中处理来自各业务模块的待办事项：按状态快速处置、审核或查阅。</p>
+      <div class="page-header__row">
+        <div>
+          <h2 class="page-title">个人任务中心</h2>
+          <p class="page-desc">
+            按 PRD 汇聚 8 类业务待办；含领导/片区查阅，以及资金月报（每月1号）与进度周报（每周五晚）。
+          </p>
+        </div>
+        <div class="page-header__role">
+          <span class="page-header__user">当前：{{ currentUserLabel }}</span>
+          <a-select
+            v-model:value="currentRole"
+            style="width: 140px"
+            :options="demoRoles.map((r) => ({ value: r, label: demoRoleLabel[r] }))"
+            @change="onDemoRoleChange"
+          />
+        </div>
+      </div>
     </div>
 
     <a-card class="summary-card" :bordered="false">
@@ -239,7 +313,7 @@ onMounted(loadTasks);
           />
         </a-form-item>
 
-        <a-form-item label="来源模块">
+        <a-form-item label="来源业务">
           <a-select
             v-model:value="sourceModuleFilter"
             allow-clear
@@ -316,7 +390,8 @@ onMounted(loadTasks);
 
                 <div class="workbench-task-card__title">{{ task.title }}</div>
                 <div class="workbench-task-card__meta">
-                  {{ task.projectName || '—' }}
+                  <span>{{ getSourceLabel(task.sourceModule) }} · {{ task.bizNodeLabel }}（{{ task.bizNode }}）</span>
+                  <span>{{ task.projectName || '—' }}</span>
                   <span v-if="task.projectCode" class="workbench-task-card__code">（{{ task.projectCode }}）</span>
                 </div>
                 <div v-if="task.summary" class="workbench-task-card__summary">{{ task.summary }}</div>
@@ -371,8 +446,11 @@ onMounted(loadTasks);
     >
       <template v-if="detailTask">
         <a-descriptions bordered :column="1">
-          <a-descriptions-item label="来源模块">
+          <a-descriptions-item label="来源业务">
             {{ getSourceLabel(detailTask.sourceModule) }}
+          </a-descriptions-item>
+          <a-descriptions-item label="流程节点">
+            {{ detailTask.bizNodeLabel }}（{{ detailTask.bizNode }}）
           </a-descriptions-item>
           <a-descriptions-item label="状态">
             {{ getStatusLabel(detailTask.status) }}
@@ -389,6 +467,11 @@ onMounted(loadTasks);
         <a-divider />
 
         <div v-if="detailTask.status === 'pending_review'">
+          <div class="modal-hint">审核结论</div>
+          <a-radio-group v-model:value="reviewResult" style="margin-bottom: 12px">
+            <a-radio value="approve">通过</a-radio>
+            <a-radio value="reject">退回</a-radio>
+          </a-radio-group>
           <div class="modal-hint">请填写审核意见（必填）</div>
           <a-textarea v-model:value="reviewOpinion" :rows="4" placeholder="请输入审核意见" />
         </div>
@@ -421,6 +504,27 @@ onMounted(loadTasks);
   margin-bottom: 16px;
 }
 
+.page-header__row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.page-header__role {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.page-header__user {
+  font-size: 13px;
+  color: rgba(0, 0, 0, 0.55);
+  white-space: nowrap;
+}
+
 .page-title {
   margin: 0;
   font-size: 20px;
@@ -432,6 +536,7 @@ onMounted(loadTasks);
   margin: 8px 0 0;
   color: var(--color-text-secondary, rgba(0, 0, 0, 0.45));
   font-size: 14px;
+  max-width: 640px;
 }
 
 .summary-card {

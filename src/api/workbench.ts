@@ -12,11 +12,15 @@ export const workbenchApi = {
   /** @throws Error（mock） */
   processTask(
     id: string,
-    opts: { status: WorkbenchStatus; expectedUpdatedAt?: string }
+    opts: {
+      status: WorkbenchStatus;
+      expectedUpdatedAt?: string;
+      reviewResult?: 'approve' | 'reject';
+      opinion?: string;
+    }
   ): Promise<WorkbenchTask> {
     return mockDelay(workbenchStore.processTask(id, opts));
   }
 };
 
 export type { WorkbenchTask };
-
