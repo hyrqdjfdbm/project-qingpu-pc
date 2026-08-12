@@ -1,4 +1,4 @@
-/** 工作台来源业务（对齐待办事项清单 8 项） */
+/** 工作台来源业务（V1.2：11 类） */
 export type WorkbenchSourceModule =
   | 'node-audit'
   | 'planning-pool'
@@ -7,7 +7,10 @@ export type WorkbenchSourceModule =
   | 'leader-assign'
   | 'problem-coord'
   | 'alert-management'
-  | 'progress-report';
+  | 'progress-fund'
+  | 'progress-schedule'
+  | 'urge-coord'
+  | 'urge-assign';
 
 export type WorkbenchStatus =
   | 'pending_dispose'
@@ -16,90 +19,76 @@ export type WorkbenchStatus =
   | 'pending_read'
   | 'done';
 
-/** 进度信息子类型：资金月报 / 进度周报 */
-export type WorkbenchProgressKind = 'fund' | 'schedule';
+/** 卡片主动作（截图【】内） */
+export type WorkbenchActionCode =
+  | 'report'
+  | 'modify'
+  | 'first_audit'
+  | 'final_audit'
+  | 'dispose'
+  | 'audit'
+  | 'confirm'
+  | 'read'
+  | 'urge_view'
+  | 'alert_close'
+  | 'superior_audit';
 
-/** 流程节点编码，对应清单序号 */
-export type WorkbenchBizNode =
-  | '1-1'
-  | '1-2'
-  | '2-1'
-  | '2-2'
-  | '2-3'
-  | '3-1'
-  | '3-2'
-  | '3-3'
-  | '4-1'
-  | '4-2'
-  | '4-3'
-  | '5-1'
-  | '5-2'
-  | '5-3'
-  | '6-1'
-  | '6-2'
-  | '6-3'
-  | '6-4'
-  | '6-5'
-  | '6-6'
-  | '6-7'
-  | '7-1'
-  | '8-1a'
-  | '8-1b';
-
-export const WORKBENCH_BIZ_NODE_LABEL: Record<WorkbenchBizNode, string> = {
-  '1-1': '填报',
-  '1-2': '审核',
-  '2-1': '申报',
-  '2-2': '初审',
-  '2-3': '终审',
-  '3-1': '申报',
-  '3-2': '初审',
-  '3-3': '终审',
-  '4-1': '申报',
-  '4-2': '初审',
-  '4-3': '终审',
-  '5-1': '处置',
-  '5-2': '审核',
-  '5-3': '查阅',
-  '6-1': '申请',
-  '6-2': '初审',
-  '6-3': '终审',
-  '6-4': '处置',
-  '6-5': '审核',
-  '6-6': '确认',
-  '6-7': '查阅',
-  '7-1': '处置',
-  '8-1a': '资金填报',
-  '8-1b': '进度填报'
+export const WORKBENCH_ACTION_LABEL: Record<WorkbenchActionCode, string> = {
+  report: '去填报',
+  modify: '去修改',
+  first_audit: '去初审',
+  final_audit: '去终审',
+  dispose: '去处置',
+  audit: '去审核',
+  confirm: '去确认',
+  read: '去查阅',
+  urge_view: '查看处置',
+  alert_close: '去销号/处置',
+  superior_audit: '去审核'
 };
+
+export interface WorkbenchUrgeRelatedItem {
+  /** 关联事项内容 */
+  matter: string;
+  projectName: string;
+  projectCode?: string;
+}
+
+export interface WorkbenchUrgeMeta {
+  urgeCount: number;
+  urgerName?: string;
+  urgedAt?: string;
+  /** 催办关联：事项与项目成组，多条分开展示 */
+  relatedItems?: WorkbenchUrgeRelatedItem[];
+}
 
 export interface WorkbenchTask {
   id: string;
   assigneeId: string;
-  bizNode: WorkbenchBizNode;
-  bizNodeLabel: string;
+  /** 业务状态原文，如「分管领导待初审」「待完结」 */
+  bizStatus: string;
+  actionCode: WorkbenchActionCode;
+  actionLabel: string;
 
   title: string;
   projectName?: string;
   projectCode?: string;
+  /** 项目节点审核：处置的具体节点名称 */
+  nodeName?: string;
+  /** 催办等：关联事项内容 */
+  relatedMatter?: string;
   sourceModule: WorkbenchSourceModule;
   sourceBizId: string;
 
-  /** 仅 progress-report：资金月报 / 进度周报 */
-  progressKind?: WorkbenchProgressKind;
-  /** 交办发起领导 ID（5-3 查阅指派用） */
-  initiatorId?: string;
-  /** 难题终审片区专员 ID（6-7 查阅指派用） */
-  finalAuditorId?: string;
-
   status: WorkbenchStatus;
   tags: string[];
+  /** 催办类 */
+  urgeMeta?: WorkbenchUrgeMeta;
 
   receivedAt: string;
   dueAt?: string;
   isOverdue: boolean;
   summary?: string;
-  actionLabel: string;
   updatedAt: string;
 }
 
@@ -144,7 +133,10 @@ export const WORKBENCH_SOURCE_MODULE_LABEL: Record<WorkbenchSourceModule, string
   'leader-assign': '领导交办',
   'problem-coord': '难题协调',
   'alert-management': '预警管理',
-  'progress-report': '项目进度信息'
+  'progress-fund': '项目上级资金信息填报',
+  'progress-schedule': '项目形象进度信息填报',
+  'urge-coord': '协调催办',
+  'urge-assign': '交办催办'
 };
 
 export const WORKBENCH_SOURCE_MODULE_OPTIONS: Array<{

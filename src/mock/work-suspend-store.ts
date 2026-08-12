@@ -28,17 +28,54 @@ function eachDate(start: string, end: string): string[] {
   const cur = new Date(start);
   const last = new Date(end);
   while (cur <= last) {
-    list.push(
-      `${cur.getFullYear()}-${pad(cur.getMonth() + 1)}-${pad(cur.getDate())}`
-    );
+    list.push(`${cur.getFullYear()}-${pad(cur.getMonth() + 1)}-${pad(cur.getDate())}`);
     cur.setDate(cur.getDate() + 1);
   }
   return list;
 }
 
+/** 节假日默认区间（不停工时用于在岗人数填报日期） */
+export function getHolidayDateRange(year: number, holiday: HolidayType): [string, string] {
+  switch (holiday) {
+    case 'mayDay':
+      return [`${year}-05-01`, `${year}-05-05`];
+    case 'nationalDay':
+      return [`${year}-10-01`, `${year}-10-07`];
+    case 'springFestival':
+      return [`${year}-01-28`, `${year}-02-04`];
+  }
+}
+
+/** 在岗人数填报日期区间：停工用停工区间，不停工用节假日默认区间 */
+export function getDailyStaffDateRange(item: Pick<
+  WorkSuspendItem,
+  'isSuspended' | 'suspendStartDate' | 'suspendEndDate' | 'year' | 'holiday'
+>): [string, string] | null {
+  if (item.isSuspended && item.suspendStartDate && item.suspendEndDate) {
+    return [item.suspendStartDate, item.suspendEndDate];
+  }
+  if (item.isSuspended === false) {
+    return getHolidayDateRange(item.year, item.holiday);
+  }
+  return null;
+}
+
 const year = new Date().getFullYear();
 
 let idSeq = 20;
+
+function mockDaily(
+  start: string,
+  end: string,
+  baseToday: number
+): DailyStaffRecord[] {
+  let cumulative = 0;
+  return eachDate(start, end).map((date, i) => {
+    const todayCount = baseToday + (i % 3);
+    cumulative += todayCount;
+    return { date, todayCount, cumulativeCount: cumulative };
+  });
+}
 
 const records: WorkSuspendItem[] = [
   {
@@ -85,10 +122,7 @@ const records: WorkSuspendItem[] = [
     suspendEndDate: `${year}-10-07`,
     stopReportedAt: offsetTime(-20),
     stopReportedBy: '孙丽娜',
-    dailyStaff: eachDate(`${year}-10-01`, `${year}-10-07`).map((date, i) => ({
-      date,
-      count: 8 + (i % 3)
-    })),
+    dailyStaff: mockDaily(`${year}-10-01`, `${year}-10-07`, 8),
     dailyReportedAt: offsetTime(-12),
     dailyReportedBy: '孙丽娜',
     status: 'pendingResume',
@@ -108,10 +142,7 @@ const records: WorkSuspendItem[] = [
     suspendEndDate: `${year}-02-04`,
     stopReportedAt: offsetTime(-60),
     stopReportedBy: '郭晓彤',
-    dailyStaff: eachDate(`${year}-01-28`, `${year}-02-04`).map((date, i) => ({
-      date,
-      count: 5 + (i % 4)
-    })),
+    dailyStaff: mockDaily(`${year}-01-28`, `${year}-02-04`, 5),
     dailyReportedAt: offsetTime(-50),
     dailyReportedBy: '郭晓彤',
     isResumed: true,
@@ -131,12 +162,19 @@ const records: WorkSuspendItem[] = [
     responsibleUnit: '区商务委',
     location: '赵巷镇',
     isSuspended: false,
-    stopReportedAt: offsetTime(-3),
+    stopReportedAt: offsetTime(-4),
     stopReportedBy: '高晨阳',
-    dailyStaff: [],
+    // 不停工也需填在岗人数；示例：已填待复工确认口径下直接完成
+    dailyStaff: mockDaily(`${year}-05-01`, `${year}-05-05`, 12),
+    dailyReportedAt: offsetTime(-3),
+    dailyReportedBy: '高晨阳',
+    isResumed: true,
+    resumeDate: `${year}-05-06`,
+    resumeReportedAt: offsetTime(-2),
+    resumeReportedBy: '高晨阳',
     status: 'completed',
     createdAt: offsetTime(-8),
-    updatedAt: offsetTime(-3)
+    updatedAt: offsetTime(-2)
   },
   {
     id: 'ws6',
@@ -150,6 +188,22 @@ const records: WorkSuspendItem[] = [
     dailyStaff: [],
     createdAt: offsetTime(-2),
     updatedAt: offsetTime(-2)
+  },
+  {
+    id: 'ws7',
+    year,
+    holiday: 'mayDay',
+    projectName: '练塘镇水环境综合整治工程',
+    projectCode: 'QP-SS-2025-071',
+    responsibleUnit: '区水务局',
+    location: '练塘镇',
+    isSuspended: false,
+    stopReportedAt: offsetTime(-1),
+    stopReportedBy: '周启明',
+    status: 'pendingDaily',
+    dailyStaff: [],
+    createdAt: offsetTime(-6),
+    updatedAt: offsetTime(-1)
   }
 ];
 
@@ -172,7 +226,11 @@ function matchQuery(item: WorkSuspendItem, params: WorkSuspendQuery) {
 }
 
 export function buildDailyStaffTemplate(start: string, end: string): DailyStaffRecord[] {
-  return eachDate(start, end).map((date) => ({ date, count: 0 }));
+  return eachDate(start, end).map((date) => ({
+    date,
+    cumulativeCount: 0,
+    todayCount: 0
+  }));
 }
 
 export const workSuspendStore = {
@@ -197,16 +255,15 @@ export const workSuspendStore = {
     if (payload.isSuspended) {
       item.suspendStartDate = payload.suspendStartDate;
       item.suspendEndDate = payload.suspendEndDate;
-      item.dailyStaff = [];
-      item.status = 'pendingDaily';
     } else {
       item.suspendStartDate = undefined;
       item.suspendEndDate = undefined;
-      item.dailyStaff = [];
-      item.isResumed = undefined;
-      item.resumeDate = undefined;
-      item.status = 'completed';
     }
+    // 无论是否停工，未复工前均需填报在岗人数
+    item.dailyStaff = [];
+    item.isResumed = undefined;
+    item.resumeDate = undefined;
+    item.status = 'pendingDaily';
     item.stopReportedAt = now;
     item.stopReportedBy = reporter;
     item.updatedAt = now;
@@ -215,16 +272,32 @@ export const workSuspendStore = {
 
   reportDailyStaff(id: string, payload: DailyStaffPayload, reporter = '项目专员') {
     const item = records.find((r) => r.id === id);
-    if (!item || item.status !== 'pendingDaily') return null;
-    if (!item.isSuspended || !item.suspendStartDate || !item.suspendEndDate) return null;
+    if (!item) return null;
+    // 未复工可填（pendingDaily / pendingResume）
+    if (item.status === 'pendingStop' || item.status === 'completed') return null;
+    if (item.isResumed === true) return null;
+    if (item.status !== 'pendingDaily' && item.status !== 'pendingResume') return null;
+
     const now = formatDateTime();
-    item.dailyStaff = payload.dailyStaff.map((d) => ({
+    const normalized = payload.dailyStaff.map((d) => ({
       date: d.date,
-      count: Number(d.count) || 0
+      cumulativeCount: Number(d.cumulativeCount) || 0,
+      todayCount: Number(d.todayCount) || 0
     }));
+
+    // 按日期合并进历史（同日覆盖）
+    const map = new Map(item.dailyStaff.map((d) => [d.date, d]));
+    for (const row of normalized) {
+      map.set(row.date, row);
+    }
+    item.dailyStaff = Array.from(map.values()).sort((a, b) => a.date.localeCompare(b.date));
     item.dailyReportedAt = now;
     item.dailyReportedBy = reporter;
-    item.status = 'pendingResume';
+
+    // 首次填完从 pendingDaily 进入待复工；已在待复工则保持（可继续补报）
+    if (item.status === 'pendingDaily') {
+      item.status = 'pendingResume';
+    }
     item.updatedAt = now;
     return cloneItem(item);
   },
@@ -237,7 +310,10 @@ export const workSuspendStore = {
     item.resumeDate = payload.isResumed ? payload.resumeDate : undefined;
     item.resumeReportedAt = now;
     item.resumeReportedBy = reporter;
-    item.status = 'completed';
+    // 确认复工后闭环；若填「未复工」则保持待复工，可继续填在岗人数
+    if (payload.isResumed) {
+      item.status = 'completed';
+    }
     item.updatedAt = now;
     return cloneItem(item);
   },

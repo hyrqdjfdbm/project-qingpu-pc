@@ -36,10 +36,15 @@ export function getWorkSuspendStatusColor(status: WorkSuspendStatus) {
   return map[status];
 }
 
-/** 停工期间每日在岗人数 */
+/**
+ * 每日在岗人数记录
+ * - cumulativeCount：累计到岗人数
+ * - todayCount：当日到岗人数
+ */
 export interface DailyStaffRecord {
   date: string;
-  count: number;
+  cumulativeCount: number;
+  todayCount: number;
 }
 
 export interface WorkSuspendItem {
@@ -56,7 +61,7 @@ export interface WorkSuspendItem {
   suspendEndDate?: string;
   stopReportedAt?: string;
   stopReportedBy?: string;
-  /** 停工期间每日在岗 */
+  /** 每日在岗历史（未复工期间持续填报） */
   dailyStaff: DailyStaffRecord[];
   dailyReportedAt?: string;
   dailyReportedBy?: string;
@@ -94,4 +99,11 @@ export interface DailyStaffPayload {
 export interface ResumeReportPayload {
   isResumed: boolean;
   resumeDate?: string;
+}
+
+/** 未复工时均可填报在岗人数（与是否停工无关） */
+export function canReportDailyStaff(item: WorkSuspendItem) {
+  if (item.status === 'pendingStop' || item.status === 'completed') return false;
+  if (item.isResumed === true) return false;
+  return item.status === 'pendingDaily' || item.status === 'pendingResume';
 }

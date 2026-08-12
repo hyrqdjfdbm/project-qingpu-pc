@@ -27,19 +27,23 @@ import {
 const loading = ref(false);
 const tasks = ref<WorkbenchTask[]>([]);
 
-/** 演示：切换身份查看不同角色待办 */
+/** 演示：切换身份查看不同角色待办；管理员看全部 */
 const demoRoles = [
   'projectSpecialist',
   'supervisor',
   'districtSpecialist',
-  'cityLeader'
+  'cityLeader',
+  'deptHead',
+  'admin'
 ] as const;
 type DemoRole = (typeof demoRoles)[number];
 const demoRoleLabel: Record<DemoRole, string> = {
   projectSpecialist: APP_ROLE_LABEL.projectSpecialist,
   supervisor: APP_ROLE_LABEL.supervisor,
   districtSpecialist: APP_ROLE_LABEL.districtSpecialist,
-  cityLeader: '领导'
+  cityLeader: APP_ROLE_LABEL.cityLeader,
+  deptHead: APP_ROLE_LABEL.deptHead,
+  admin: APP_ROLE_LABEL.admin
 };
 const currentRole = ref<AppRole>(getCurrentUser().role);
 const currentUserLabel = computed(() => {
@@ -129,21 +133,6 @@ function handleSearch() {
   pagination.current = 1;
 }
 
-function statusTagColor(status: WorkbenchTask['status']) {
-  switch (status) {
-    case 'pending_dispose':
-      return 'processing';
-    case 'pending_review':
-      return 'blue';
-    case 'pending_confirm':
-      return 'orange';
-    case 'pending_read':
-      return 'purple';
-    default:
-      return 'default';
-  }
-}
-
 function getStatusLabel(status: WorkbenchTask['status']) {
   if (status === 'done') return '已完成';
   return WORKBENCH_STATUS_LABEL[status as Exclude<WorkbenchTask['status'], 'done'>];
@@ -151,6 +140,22 @@ function getStatusLabel(status: WorkbenchTask['status']) {
 
 function getSourceLabel(source: unknown) {
   return WORKBENCH_SOURCE_MODULE_LABEL[source as WorkbenchSourceModule] ?? '—';
+}
+
+/** 仅领导交办、难题协调、资金填报、进度填报展示截止时间 */
+const DUE_DATE_SOURCE_MODULES: WorkbenchSourceModule[] = [
+  'leader-assign',
+  'problem-coord',
+  'progress-fund',
+  'progress-schedule'
+];
+
+function showDueDate(task: WorkbenchTask) {
+  return DUE_DATE_SOURCE_MODULES.includes(task.sourceModule);
+}
+
+function showOverdue(task: WorkbenchTask) {
+  return showDueDate(task) && task.isOverdue;
 }
 
 const detailOpen = ref(false);
@@ -217,9 +222,11 @@ async function submitTask() {
             : undefined
     });
     message.success(
-      task.status === 'pending_review' && reviewResult.value === 'reject'
-        ? '已退回，已生成专员待改待办'
-        : '已处理完成'
+      task.actionCode === 'urge_view'
+        ? '已阅催办提示'
+        : task.status === 'pending_review' && reviewResult.value === 'reject'
+          ? '已退回'
+          : '已处理完成'
     );
     detailOpen.value = false;
     await loadTasks();
@@ -240,15 +247,12 @@ onMounted(loadTasks);
       <div class="page-header__row">
         <div>
           <h2 class="page-title">个人任务中心</h2>
-          <p class="page-desc">
-            按 PRD 汇聚 8 类业务待办；含领导/片区查阅，以及资金月报（每月1号）与进度周报（每周五晚）。
-          </p>
         </div>
         <div class="page-header__role">
           <span class="page-header__user">当前：{{ currentUserLabel }}</span>
           <a-select
             v-model:value="currentRole"
-            style="width: 140px"
+            style="width: 150px"
             :options="demoRoles.map((r) => ({ value: r, label: demoRoleLabel[r] }))"
             @change="onDemoRoleChange"
           />
@@ -375,26 +379,34 @@ onMounted(loadTasks);
           >
             <div class="workbench-task-card__row">
               <div class="workbench-task-card__left">
-                <div class="workbench-task-card__top-tags">
-                  <a-tag v-if="task.isOverdue" color="error" class="task-cell__overdue">
+                <div v-if="showOverdue(task)" class="workbench-task-card__top-tags">
+                  <a-tag color="error" class="task-cell__overdue">
                     <template #icon>
                       <ExclamationCircleOutlined />
                     </template>
                     逾期
                   </a-tag>
-                  <a-tag :color="statusTagColor(task.status)">{{ getStatusLabel(task.status) }}</a-tag>
-                  <a-tag v-for="t in task.tags" :key="t" class="task-cell__tag">
-                    {{ t }}
-                  </a-tag>
                 </div>
 
                 <div class="workbench-task-card__title">{{ task.title }}</div>
                 <div class="workbench-task-card__meta">
-                  <span>{{ getSourceLabel(task.sourceModule) }} · {{ task.bizNodeLabel }}（{{ task.bizNode }}）</span>
+                  <span>{{ getSourceLabel(task.sourceModule) }}</span>
+                  <a-tag color="cyan">{{ task.bizStatus }}</a-tag>
+                  <a-tag color="blue">动作：{{ task.actionLabel.replace(/^去/, '') }}</a-tag>
+                  <a-tag v-if="task.nodeName" color="geekblue">节点：{{ task.nodeName }}</a-tag>
                   <span>{{ task.projectName || '—' }}</span>
                   <span v-if="task.projectCode" class="workbench-task-card__code">（{{ task.projectCode }}）</span>
                 </div>
                 <div v-if="task.summary" class="workbench-task-card__summary">{{ task.summary }}</div>
+                <div
+                  v-if="task.urgeMeta"
+                  class="workbench-task-card__summary"
+                  style="color: #d46b08"
+                >
+                  催办 {{ task.urgeMeta.urgeCount }} 条
+                  <template v-if="task.urgeMeta.urgerName"> · 来自 {{ task.urgeMeta.urgerName }}</template>
+                  <template v-if="task.urgeMeta.urgedAt"> · {{ task.urgeMeta.urgedAt }}</template>
+                </div>
               </div>
 
               <div class="workbench-task-card__right">
@@ -411,7 +423,7 @@ onMounted(loadTasks);
 
             <div class="workbench-task-card__times">
               <span>接收时间：{{ task.receivedAt }}</span>
-              <span>
+              <span v-if="showDueDate(task)">
                 截止时间：
                 <span :class="{ 'dueAt--overdue': task.isOverdue }">{{ task.dueAt || '—' }}</span>
               </span>
@@ -449,24 +461,75 @@ onMounted(loadTasks);
           <a-descriptions-item label="来源业务">
             {{ getSourceLabel(detailTask.sourceModule) }}
           </a-descriptions-item>
-          <a-descriptions-item label="流程节点">
-            {{ detailTask.bizNodeLabel }}（{{ detailTask.bizNode }}）
+          <a-descriptions-item label="业务状态">
+            {{ detailTask.bizStatus }}
           </a-descriptions-item>
-          <a-descriptions-item label="状态">
+          <a-descriptions-item label="应做动作">
+            {{ detailTask.actionLabel }}
+          </a-descriptions-item>
+          <a-descriptions-item label="工作台状态">
             {{ getStatusLabel(detailTask.status) }}
           </a-descriptions-item>
-          <a-descriptions-item label="关联信息">
-            {{ detailTask.projectName || '—' }}
-            <span v-if="detailTask.projectCode">（{{ detailTask.projectCode }}）</span>
+          <template v-if="detailTask.urgeMeta?.relatedItems?.length">
+            <a-descriptions-item
+              v-for="(item, idx) in detailTask.urgeMeta.relatedItems"
+              :key="`${item.projectCode || item.projectName}-${idx}`"
+              :label="
+                detailTask.urgeMeta.relatedItems!.length > 1
+                  ? `催办事项 ${idx + 1}`
+                  : '催办事项'
+              "
+            >
+              <div class="urge-related-block">
+                <div>
+                  <span class="urge-related-block__label">关联事项：</span>
+                  {{ item.matter }}
+                </div>
+                <div>
+                  <span class="urge-related-block__label">关联项目：</span>
+                  {{ item.projectName }}
+                  <span v-if="item.projectCode">（{{ item.projectCode }}）</span>
+                </div>
+              </div>
+            </a-descriptions-item>
+          </template>
+          <template v-else>
+            <a-descriptions-item label="关联项目">
+              {{ detailTask.projectName || '—' }}
+              <span v-if="detailTask.projectCode">（{{ detailTask.projectCode }}）</span>
+            </a-descriptions-item>
+            <a-descriptions-item v-if="detailTask.relatedMatter" label="关联事项">
+              {{ detailTask.relatedMatter }}
+            </a-descriptions-item>
+          </template>
+          <a-descriptions-item v-if="detailTask.nodeName" label="处置节点">
+            {{ detailTask.nodeName }}
           </a-descriptions-item>
           <a-descriptions-item label="接收时间">{{ detailTask.receivedAt }}</a-descriptions-item>
-          <a-descriptions-item label="截止时间">{{ detailTask.dueAt || '—' }}</a-descriptions-item>
+          <a-descriptions-item v-if="showDueDate(detailTask)" label="截止时间">
+            {{ detailTask.dueAt || '—' }}
+          </a-descriptions-item>
           <a-descriptions-item label="摘要">{{ detailTask.summary || '—' }}</a-descriptions-item>
+          <a-descriptions-item v-if="detailTask.urgeMeta" label="催办信息">
+            共 {{ detailTask.urgeMeta.urgeCount }} 条
+            <template v-if="detailTask.urgeMeta.urgerName">
+              · 催办人 {{ detailTask.urgeMeta.urgerName }}
+            </template>
+            <template v-if="detailTask.urgeMeta.urgedAt">
+              · {{ detailTask.urgeMeta.urgedAt }}
+            </template>
+          </a-descriptions-item>
         </a-descriptions>
 
         <a-divider />
 
-        <div v-if="detailTask.status === 'pending_review'">
+        <div v-if="detailTask.actionCode === 'urge_view'">
+          <div class="modal-hint">
+            一般性催办提示：请关注相关事项并尽快办理。点击确定将标记本条提示为已阅（不替代业务处置待办）。
+          </div>
+        </div>
+
+        <div v-else-if="detailTask.status === 'pending_review'">
           <div class="modal-hint">审核结论</div>
           <a-radio-group v-model:value="reviewResult" style="margin-bottom: 12px">
             <a-radio value="approve">通过</a-radio>
@@ -530,13 +593,6 @@ onMounted(loadTasks);
   font-size: 20px;
   font-weight: 600;
   color: var(--color-text-primary, rgba(0, 0, 0, 0.88));
-}
-
-.page-desc {
-  margin: 8px 0 0;
-  color: var(--color-text-secondary, rgba(0, 0, 0, 0.45));
-  font-size: 14px;
-  max-width: 640px;
 }
 
 .summary-card {
@@ -737,6 +793,17 @@ onMounted(loadTasks);
 .modal-hint {
   color: rgba(0, 0, 0, 0.7);
   margin-bottom: 8px;
+}
+
+.urge-related-block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  line-height: 1.5;
+}
+
+.urge-related-block__label {
+  color: rgba(0, 0, 0, 0.45);
 }
 </style>
 

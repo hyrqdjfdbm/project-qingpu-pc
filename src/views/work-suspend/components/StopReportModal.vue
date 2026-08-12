@@ -57,7 +57,7 @@ async function submit() {
       suspendEndDate: isSuspended.value ? dateRange.value![1] : undefined
     });
     message.success(
-      isSuspended.value ? '停工情况已填报，请继续填报停工期间每日在岗人数' : '已确认不停工，本条填报完成'
+      '停工情况已填报。未复工前无论是否停工，均需继续填报每日在岗人数（累计到岗 / 当日到岗）。'
     );
     emit('saved');
     close();

@@ -1,9 +1,10 @@
-/** 增补库演示用当前登录用户（无真实登录时模拟数据/按钮权限） */
+/** 增补库 / 工作台演示用当前登录用户（无真实登录时模拟数据/按钮权限） */
 export type AppRole =
   | 'projectSpecialist'
   | 'supervisor'
   | 'districtSpecialist'
   | 'cityLeader'
+  | 'deptHead'
   | 'admin';
 
 export const APP_ROLE_LABEL: Record<AppRole, string> = {
@@ -11,6 +12,7 @@ export const APP_ROLE_LABEL: Record<AppRole, string> = {
   supervisor: '分管领导',
   districtSpecialist: '片区专员',
   cityLeader: '市领导',
+  deptHead: '部门一把手',
   admin: '系统管理员'
 };
 
@@ -18,7 +20,8 @@ export const ROLE_PRESETS: Record<AppRole, { id: string; name: string; unit: str
   projectSpecialist: { id: 'u-specialist-lin', name: '林雨桐', unit: '区建管委' },
   supervisor: { id: 'u-supervisor-zhao', name: '赵文博', unit: '区建管委' },
   districtSpecialist: { id: 'u-district-1', name: '片区专员甲', unit: '区发改委' },
-  cityLeader: { id: 'u-city-1', name: '市领导', unit: '市政府' },
+  cityLeader: { id: 'u-city-1', name: '周启明', unit: '市政府' },
+  deptHead: { id: 'u-dept-head-1', name: '陈立峰', unit: '区建管委' },
   admin: { id: 'u-admin', name: '系统管理员', unit: '系统' }
 };
 

@@ -14,13 +14,12 @@ export interface ExcludedUnitDetail {
 
 /** 附件分类 */
 export const DRAW_ATTACHMENT_CATEGORIES = [
-  { key: 'entrustChecklist', label: '工程项目委托审价资料清单（概算）' },
-  { key: 'projectProposal', label: '经批准的项目建议书', seq: 1 },
-  { key: 'feasibilityReport', label: '经批准的可行性研究报告（含估算表）', seq: 2 },
-  { key: 'preliminaryDesign', label: '初步设计文本', seq: 3 },
-  { key: 'budgetEstimate', label: '工程概算书', seq: 4 },
-  { key: 'quantityCalc', label: '工程量计算书', seq: 5 },
-  { key: 'other', label: '其他', seq: 6 }
+  { key: 'applicationForm', label: '申请表', seq: 1 },
+  { key: 'projectProposal', label: '项目建议书', seq: 2 },
+  { key: 'feasibilityReport', label: '可行性研究报告', seq: 3 },
+  { key: 'preliminaryDesign', label: '初步设计文本', seq: 4 },
+  { key: 'budgetEstimate', label: '工程概算书', seq: 5 },
+  { key: 'quantityMeasure', label: '工程计量数', seq: 6 }
 ] as const;
 
 export type DrawAttachmentCategoryKey = (typeof DRAW_ATTACHMENT_CATEGORIES)[number]['key'];

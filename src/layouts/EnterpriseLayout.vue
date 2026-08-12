@@ -32,8 +32,11 @@ const isCockpit = computed(() => route.meta.fullscreen === true);
 
 const workbenchPendingCount = ref(0);
 function refreshWorkbenchBadge() {
-  const userId = getCurrentUser().id;
-  workbenchPendingCount.value = workbenchStore.getPendingCount(userId);
+  const user = getCurrentUser();
+  workbenchPendingCount.value =
+    user.role === 'admin'
+      ? workbenchStore.getAllPendingCount()
+      : workbenchStore.getPendingCount(user.id);
 }
 onMounted(() => {
   refreshWorkbenchBadge();

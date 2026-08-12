@@ -1,11 +1,20 @@
 <script setup lang="ts">
-import { BarChartOutlined, FormOutlined } from '@ant-design/icons-vue';
+import {
+  ApartmentOutlined,
+  BarChartOutlined,
+  FormOutlined,
+  LineChartOutlined
+} from '@ant-design/icons-vue';
 import { ref } from 'vue';
 import FundProgressModal from './components/FundProgressModal.vue';
+import MultiUnitChartModal from './components/MultiUnitChartModal.vue';
+import MultiUnitSlantChartModal from './components/MultiUnitSlantChartModal.vue';
 import ProjectAnalysisChartModal from './components/ProjectAnalysisChartModal.vue';
 
 const fundProgressOpen = ref(false);
 const projectAnalysisOpen = ref(false);
+const multiUnitChartOpen = ref(false);
+const multiUnitSlantChartOpen = ref(false);
 </script>
 
 <template>
@@ -43,10 +52,42 @@ const projectAnalysisOpen = ref(false);
           项目分析图表设计
         </a-button>
       </div>
+
+      <a-divider />
+
+      <div class="design-card__item">
+        <div class="design-card__meta">
+          <div class="design-card__name">多单位图表</div>
+          <div class="design-card__desc">
+            约 30 个责任单位 × 项目数：横向条形图 + 降序 + 默认 Top 15，可展开全部 / 搜索单位
+          </div>
+        </div>
+        <a-button type="primary" @click="multiUnitChartOpen = true">
+          <template #icon><ApartmentOutlined /></template>
+          多单位图表
+        </a-button>
+      </div>
+
+      <a-divider />
+
+      <div class="design-card__item">
+        <div class="design-card__meta">
+          <div class="design-card__name">多单位图表（斜标）</div>
+          <div class="design-card__desc">
+            竖向柱状图，责任单位横轴倾斜 40° 展示；单位多时支持底部拖动浏览
+          </div>
+        </div>
+        <a-button type="primary" @click="multiUnitSlantChartOpen = true">
+          <template #icon><LineChartOutlined /></template>
+          多单位图表（斜标）
+        </a-button>
+      </div>
     </a-card>
 
     <FundProgressModal v-model:open="fundProgressOpen" />
     <ProjectAnalysisChartModal v-model:open="projectAnalysisOpen" />
+    <MultiUnitChartModal v-model:open="multiUnitChartOpen" />
+    <MultiUnitSlantChartModal v-model:open="multiUnitSlantChartOpen" />
   </div>
 </template>
 

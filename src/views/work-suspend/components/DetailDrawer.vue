@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { buildDailyStaffTemplate } from '@/mock/work-suspend-store';
+import { getDailyStaffDateRange } from '@/mock/work-suspend-store';
 import {
   HOLIDAY_TYPE_LABEL,
+  WORK_SUSPEND_STATUS_LABEL,
   type WorkSuspendItem
 } from '@/types/work-suspend';
 
@@ -15,17 +16,19 @@ const emit = defineEmits<{
   'update:open': [value: boolean];
 }>();
 
-const dailyStaffRows = computed(() => {
+const historyRows = computed(() => {
   const record = props.record;
-  if (!record?.isSuspended) return [];
-  if (record.dailyStaff?.length) return record.dailyStaff;
-  if (record.suspendStartDate && record.suspendEndDate) {
-    return buildDailyStaffTemplate(record.suspendStartDate, record.suspendEndDate);
+  if (!record) return [];
+  if (record.dailyStaff?.length) {
+    return [...record.dailyStaff].sort((a, b) => a.date.localeCompare(b.date));
   }
   return [];
 });
 
-const dailyStaffFilled = computed(() => Boolean(props.record?.dailyStaff?.length));
+const expectedRange = computed(() => {
+  if (!props.record) return null;
+  return getDailyStaffDateRange(props.record);
+});
 
 function close() {
   emit('update:open', false);
@@ -38,10 +41,11 @@ function yn(v: boolean | undefined) {
 </script>
 
 <template>
-  <a-drawer :open="open" title="停复工详情" :width="680" destroy-on-close @close="close">
+  <a-drawer :open="open" title="停复工详情" :width="720" destroy-on-close @close="close">
     <template v-if="record">
       <div style="margin-bottom: 12px; color: rgba(0, 0, 0, 0.65)">
-        {{ record.year }}年{{ HOLIDAY_TYPE_LABEL[record.holiday] }}
+        {{ record.year }}年{{ HOLIDAY_TYPE_LABEL[record.holiday] }} ·
+        {{ WORK_SUSPEND_STATUS_LABEL[record.status] }}
       </div>
 
       <a-descriptions title="项目信息" bordered size="small" :column="2">
@@ -64,42 +68,42 @@ function yn(v: boolean | undefined) {
         <a-descriptions-item label="填报时间">{{ record.stopReportedAt || '—' }}</a-descriptions-item>
       </a-descriptions>
 
-      <div v-if="record.isSuspended" style="margin-top: 16px">
-        <div style="font-weight: 600; margin-bottom: 8px">停工期间每日在岗人数</div>
+      <div style="margin-top: 16px">
+        <div style="font-weight: 600; margin-bottom: 8px">每日在岗人数历史记录</div>
         <a-alert
-          v-if="!dailyStaffFilled"
+          v-if="!historyRows.length"
           type="warning"
           show-icon
           style="margin-bottom: 8px"
-          message="尚未填报在岗人数"
-          description="请在列表操作中点击「填报在岗人数」完成填报；下表为停工期间日期清单。"
+          message="暂无在岗人数历史"
+          :description="
+            expectedRange
+              ? `未复工前需填报在岗人数（区间 ${expectedRange[0]} 至 ${expectedRange[1]}）。请在列表点击「填报在岗人数」。`
+              : '请先完成停工情况填报。'
+          "
         />
         <a-table
+          v-else
           size="small"
           :pagination="false"
           row-key="date"
-          :data-source="dailyStaffRows"
+          :data-source="historyRows"
           :columns="[
             { title: '日期', dataIndex: 'date', width: 140 },
-            { title: '在岗人数', dataIndex: 'count', width: 120 }
+            { title: '累计到岗人数', dataIndex: 'cumulativeCount', width: 140 },
+            { title: '当日到岗人数', dataIndex: 'todayCount', width: 140 }
           ]"
-        >
-          <template #bodyCell="{ column, record: row }">
-            <template v-if="column.dataIndex === 'count'">
-              {{ dailyStaffFilled ? row.count : '—' }}
-            </template>
-          </template>
-        </a-table>
+        />
         <div
-          v-if="dailyStaffFilled"
+          v-if="historyRows.length"
           style="margin-top: 8px; color: rgba(0, 0, 0, 0.45); font-size: 12px"
         >
-          填报：{{ record.dailyReportedBy || '—' }} · {{ record.dailyReportedAt || '—' }}
+          最近填报：{{ record.dailyReportedBy || '—' }} · {{ record.dailyReportedAt || '—' }}
         </div>
       </div>
 
       <a-descriptions
-        v-if="record.isSuspended"
+        v-if="record.isSuspended !== undefined"
         title="复工情况"
         bordered
         size="small"

@@ -6,6 +6,7 @@ import { RESPONSIBLE_UNIT_OPTIONS } from '@/types/supplement-pool';
 import {
   HOLIDAY_TYPE_LABEL,
   HOLIDAY_TYPE_OPTIONS,
+  canReportDailyStaff,
   type HolidayType,
   type WorkSuspendItem
 } from '@/types/work-suspend';
@@ -118,8 +119,8 @@ onMounted(loadList);
       <div>
         <h2 class="page-title">项目停复工情况</h2>
         <p class="page-desc">
-          记录每年五一 / 国庆 / 春节期间已开工项目的停复工情况。流程：填报停工情况 →（若停工）填报停工期间每日在岗人数 →
-          复工后填报复工情况。
+          记录每年五一 / 国庆 / 春节期间已开工项目的停复工情况。流程：填报停工情况 →
+          未复工前无论是否停工均需每日填报累计到岗人数与当日到岗人数 → 复工后填报复工情况。详情可查看在岗历史。
         </p>
       </div>
     </div>
@@ -256,7 +257,7 @@ onMounted(loadList);
                 填报停工情况
               </a-button>
               <a-button
-                v-if="(row as WorkSuspendItem).status === 'pendingDaily'"
+                v-if="canReportDailyStaff(row as WorkSuspendItem)"
                 type="link"
                 size="small"
                 @click="openDaily(row as WorkSuspendItem)"

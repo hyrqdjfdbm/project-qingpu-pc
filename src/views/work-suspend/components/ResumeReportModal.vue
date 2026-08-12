@@ -72,7 +72,11 @@ async function submit() {
           {{ record.year }}年{{ HOLIDAY_TYPE_LABEL[record.holiday] }}
         </a-descriptions-item>
         <a-descriptions-item label="停工时间">
-          {{ record.suspendStartDate }} 至 {{ record.suspendEndDate }}
+          {{
+            record.isSuspended
+              ? `${record.suspendStartDate || '—'} 至 ${record.suspendEndDate || '—'}`
+              : '不停工'
+          }}
         </a-descriptions-item>
       </a-descriptions>
 

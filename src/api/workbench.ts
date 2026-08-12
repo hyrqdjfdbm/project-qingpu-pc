@@ -5,8 +5,11 @@ import type { WorkbenchStatus, WorkbenchTask } from '@/types/workbench';
 
 export const workbenchApi = {
   listPending() {
-    const userId = getCurrentUser().id;
-    return mockDelay(workbenchStore.listPendingByAssignee(userId));
+    const user = getCurrentUser();
+    if (user.role === 'admin') {
+      return mockDelay(workbenchStore.listAllPending());
+    }
+    return mockDelay(workbenchStore.listPendingByAssignee(user.id));
   },
 
   /** @throws Error（mock） */

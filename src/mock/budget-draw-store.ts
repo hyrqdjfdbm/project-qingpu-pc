@@ -31,8 +31,8 @@ const records: BudgetDrawRecord[] = [
       }
     ],
     attachments: [
-      { category: 'entrustChecklist', name: '委托审价资料清单.pdf', size: 102400 },
-      { category: 'projectProposal', name: '项目建议书批复.pdf', size: 245760 },
+      { category: 'applicationForm', name: '申请表.pdf', size: 102400 },
+      { category: 'projectProposal', name: '项目建议书.pdf', size: 245760 },
       { category: 'feasibilityReport', name: '可行性研究报告.pdf', size: 512000 },
       { category: 'budgetEstimate', name: '工程概算书.xlsx', size: 128000 }
     ],
@@ -63,9 +63,9 @@ const records: BudgetDrawRecord[] = [
       }
     ],
     attachments: [
-      { category: 'entrustChecklist', name: '委托审价资料清单.pdf', size: 86000 },
+      { category: 'applicationForm', name: '申请表.pdf', size: 86000 },
       { category: 'preliminaryDesign', name: '初步设计文本.pdf', size: 380000 },
-      { category: 'quantityCalc', name: '工程量计算书.xlsx', size: 96000 }
+      { category: 'quantityMeasure', name: '工程计量数.xlsx', size: 96000 }
     ],
     winnerUnit: '兰溪市第一测量师事务所',
     eligibleCount: 6,

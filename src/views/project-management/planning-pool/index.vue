@@ -5,14 +5,12 @@ import { computed, onMounted, reactive, ref } from 'vue';
 import { projectsApi } from '@/api/supplement-pool';
 import ProjectDetailDrawer from '../supplement-pool/components/ProjectDetailDrawer.vue';
 import type {
-  ConstructionNature,
   InvestRange,
   ProjectStatus,
   ProjectType,
   SupplementProjectItem
 } from '@/types/supplement-pool';
 import {
-  CONSTRUCTION_NATURE_LABEL,
   getProjectStatusTagColor,
   INVEST_RANGE_LABEL,
   PROJECT_STATUS_LABEL,
@@ -20,6 +18,8 @@ import {
   RESPONSIBLE_UNIT_OPTIONS,
   STREET_TOWN_OPTIONS
 } from '@/types/supplement-pool';
+
+type SortOrder = 'ascend' | 'descend' | null;
 
 const searchForm = reactive({
   keyword: '',
@@ -35,20 +35,109 @@ const loading = ref(false);
 const pagination = reactive({ current: 1, pageSize: 10 });
 const detailOpen = ref(false);
 const viewingItem = ref<SupplementProjectItem | null>(null);
+const sortState = reactive<{ field?: string; order: SortOrder }>({
+  order: null
+});
 
-const columns: TableColumnType[] = [
-  { title: '项目名称', dataIndex: 'projectName', key: 'projectName', width: 220, ellipsis: true },
-  { title: '项目代码', dataIndex: 'projectCode', key: 'projectCode', width: 180 },
-  { title: '项目类型', dataIndex: 'projectType', key: 'projectType', width: 110 },
-  { title: '项目属地', dataIndex: 'projectLocation', key: 'projectLocation', width: 100 },
-  { title: '总投资（亿元）', dataIndex: 'totalInvestment', key: 'totalInvestment', width: 130, align: 'right' },
-  { title: '项目状态', dataIndex: 'status', key: 'status', width: 100 },
+const sortableFields = [
+  'projectName',
+  'projectCode',
+  'projectType',
+  'projectLocation',
+  'totalInvestment',
+  'status'
+] as const;
+
+type SortableField = (typeof sortableFields)[number];
+
+const columns = computed<TableColumnType<SupplementProjectItem>[]>(() => [
+  {
+    title: '项目名称',
+    dataIndex: 'projectName',
+    key: 'projectName',
+    width: 220,
+    ellipsis: true,
+    sorter: true,
+    sortOrder: sortState.field === 'projectName' ? sortState.order : null
+  },
+  {
+    title: '项目代码',
+    dataIndex: 'projectCode',
+    key: 'projectCode',
+    width: 180,
+    sorter: true,
+    sortOrder: sortState.field === 'projectCode' ? sortState.order : null
+  },
+  {
+    title: '项目类型',
+    dataIndex: 'projectType',
+    key: 'projectType',
+    width: 110,
+    sorter: true,
+    sortOrder: sortState.field === 'projectType' ? sortState.order : null
+  },
+  {
+    title: '项目属地',
+    dataIndex: 'projectLocation',
+    key: 'projectLocation',
+    width: 100,
+    sorter: true,
+    sortOrder: sortState.field === 'projectLocation' ? sortState.order : null
+  },
+  {
+    title: '总投资（亿元）',
+    dataIndex: 'totalInvestment',
+    key: 'totalInvestment',
+    width: 130,
+    align: 'right',
+    sorter: true,
+    sortOrder: sortState.field === 'totalInvestment' ? sortState.order : null
+  },
+  {
+    title: '项目状态',
+    dataIndex: 'status',
+    key: 'status',
+    width: 100,
+    sorter: true,
+    sortOrder: sortState.field === 'status' ? sortState.order : null
+  },
   { title: '操作', key: 'operation', width: 160, fixed: 'right' }
-];
+]);
+
+function compareValues(a: SupplementProjectItem, b: SupplementProjectItem, field: SortableField) {
+  switch (field) {
+    case 'projectName':
+    case 'projectCode':
+    case 'projectLocation':
+      return String(a[field] ?? '').localeCompare(String(b[field] ?? ''), 'zh-CN');
+    case 'projectType':
+      return PROJECT_TYPE_LABEL[a.projectType].localeCompare(
+        PROJECT_TYPE_LABEL[b.projectType],
+        'zh-CN'
+      );
+    case 'totalInvestment':
+      return (a.totalInvestment ?? 0) - (b.totalInvestment ?? 0);
+    case 'status':
+      return PROJECT_STATUS_LABEL[a.status].localeCompare(PROJECT_STATUS_LABEL[b.status], 'zh-CN');
+    default:
+      return 0;
+  }
+}
+
+const sortedData = computed(() => {
+  const list = [...tableData.value];
+  const field = sortState.field as SortableField | undefined;
+  if (!field || !sortState.order || !sortableFields.includes(field)) return list;
+  list.sort((a, b) => {
+    const result = compareValues(a, b, field);
+    return sortState.order === 'ascend' ? result : -result;
+  });
+  return list;
+});
 
 const pagedData = computed(() => {
   const start = (pagination.current - 1) * pagination.pageSize;
-  return tableData.value.slice(start, start + pagination.pageSize);
+  return sortedData.value.slice(start, start + pagination.pageSize);
 });
 
 async function loadList() {
@@ -84,6 +173,8 @@ function handleReset() {
     responsibleUnit: undefined,
     status: undefined
   });
+  sortState.field = undefined;
+  sortState.order = null;
   pagination.current = 1;
   loadList();
 }
@@ -103,9 +194,19 @@ function statusTagColor(status: ProjectStatus) {
   return getProjectStatusTagColor(status);
 }
 
-function onTableChange(pag: { current?: number; pageSize?: number }) {
+function onTableChange(
+  pag: { current?: number; pageSize?: number },
+  _filters: unknown,
+  sorter:
+    | { field?: string | number; columnKey?: string | number; order?: SortOrder }
+    | Array<{ field?: string | number; columnKey?: string | number; order?: SortOrder }>
+) {
   pagination.current = pag.current || 1;
   pagination.pageSize = pag.pageSize || 10;
+  const current = Array.isArray(sorter) ? sorter[0] : sorter;
+  const field = current?.field ?? current?.columnKey;
+  sortState.field = field != null ? String(field) : undefined;
+  sortState.order = current?.order ?? null;
 }
 </script>
 

@@ -28,13 +28,12 @@ const result = ref<BudgetDrawRecord | null>(null);
 
 function createEmptyFileLists(): Record<DrawAttachmentCategoryKey, UploadFile[]> {
   return {
-    entrustChecklist: [],
+    applicationForm: [],
     projectProposal: [],
     feasibilityReport: [],
     preliminaryDesign: [],
     budgetEstimate: [],
-    quantityCalc: [],
-    other: []
+    quantityMeasure: []
   };
 }
 
