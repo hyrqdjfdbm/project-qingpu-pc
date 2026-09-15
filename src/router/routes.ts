@@ -19,6 +19,7 @@ import {
   PauseCircleOutlined,
   ReadOutlined,
   SolutionOutlined,
+  TableOutlined,
   TeamOutlined,
   TrophyOutlined,
   UserSwitchOutlined
@@ -86,7 +87,7 @@ export const menuGroups: MenuGroup[] = [
   },
   {
     key: 'supplement-library',
-    title: '增补库',
+    title: '增补库（兰溪）',
     children: [
       { path: '/supplement-library', title: '项目增补', icon: FormOutlined },
       { path: '/supplement-library/audit/first', title: '增补初审', icon: SolutionOutlined },
@@ -97,10 +98,27 @@ export const menuGroups: MenuGroup[] = [
     key: 'project-management',
     title: '项目管理',
     children: [
-      { path: '/project-management/overview', title: '项目概览', icon: DashboardOutlined },
+      {
+        key: 'pm-implementation-library',
+        title: '实施项目库',
+        icon: BuildOutlined,
+        children: [
+          { path: '/project-management/overview', title: '项目概览', icon: DashboardOutlined },
+          { path: '/project-management/implementation-pool', title: '实施库', icon: BuildOutlined },
+          { path: '/project-management/audit-management', title: '审核管理', icon: AuditOutlined }
+        ]
+      },
+      {
+        key: 'pm-qingpu-supplement',
+        title: '增补库',
+        icon: DatabaseOutlined,
+        children: [
+          { path: '/project-management/qingpu-supplement', title: '项目增补列表', icon: FormOutlined },
+          { path: '/project-management/qingpu-supplement/audit', title: '增补审核', icon: SolutionOutlined }
+        ]
+      },
       { path: '/project-management/planning-pool', title: '谋划库', icon: BulbOutlined },
       { path: '/project-management/supplement-pool', title: '增补库（在库）', icon: DatabaseOutlined },
-      { path: '/project-management/implementation-pool', title: '实施库', icon: BuildOutlined },
       {
         path: '/project-management/gov-investment-pool',
         title: '政府投资项目库',
@@ -160,6 +178,17 @@ export const menuGroups: MenuGroup[] = [
     title: '预警管理',
     children: [
       { path: '/alert-management', title: '预警管理', icon: AlertOutlined }
+    ]
+  },
+  {
+    key: 'data-management',
+    title: '数据管理',
+    children: [
+      {
+        path: '/data-management/unit-fixed-investment',
+        title: '责任单位固投',
+        icon: TableOutlined
+      }
     ]
   },
   {
@@ -250,6 +279,18 @@ export const routes: RouteRecordRaw[] = [
     meta: { title: '增补终审', icon: CheckCircleOutlined, group: 'supplement-library' }
   },
   {
+    path: '/project-management/qingpu-supplement/audit',
+    name: 'QingpuSupplementAudit',
+    component: () => import('@/views/project-management/qingpu-supplement/audit.vue'),
+    meta: { title: '增补审核', icon: SolutionOutlined, group: 'project-management' }
+  },
+  {
+    path: '/project-management/qingpu-supplement',
+    name: 'QingpuSupplementList',
+    component: () => import('@/views/project-management/qingpu-supplement/index.vue'),
+    meta: { title: '项目增补列表', icon: FormOutlined, group: 'project-management' }
+  },
+  {
     path: '/project-management/overview',
     name: 'ProjectOverview',
     component: () => import('@/views/project-management/overview/index.vue'),
@@ -272,6 +313,18 @@ export const routes: RouteRecordRaw[] = [
     name: 'ImplementationPool',
     component: () => import('@/views/project-management/implementation-pool/index.vue'),
     meta: { title: '实施库', icon: BuildOutlined, group: 'project-management' }
+  },
+  {
+    path: '/project-management/implementation-pool/:id',
+    name: 'ImplementationPoolDetail',
+    component: () => import('@/views/project-management/implementation-pool/detail.vue'),
+    meta: { title: '实施库项目详情', icon: BuildOutlined, group: 'project-management' }
+  },
+  {
+    path: '/project-management/audit-management',
+    name: 'ProjectAuditManagement',
+    component: () => import('@/views/project-management/audit-management/index.vue'),
+    meta: { title: '审核管理', icon: AuditOutlined, group: 'project-management' }
   },
   {
     path: '/project-management/gov-investment-pool',
@@ -308,6 +361,14 @@ export const routes: RouteRecordRaw[] = [
     name: 'ImageProgressCompletionDetail',
     component: () => import('@/views/project-management/image-progress-completion/detail.vue'),
     meta: { title: '形象进度完成情况详情', icon: FundOutlined, group: 'project-management' }
+  },
+  {
+    path: '/project-management/progress-fund-report',
+    redirect: '/project-management/audit-management'
+  },
+  {
+    path: '/project-management/progress-fund-report/:id',
+    redirect: (to) => `/project-management/implementation-pool/${to.params.id}`
   },
   {
     path: '/route-planning/saturday-activity',
@@ -382,6 +443,12 @@ export const routes: RouteRecordRaw[] = [
     name: 'AlertManagement',
     component: () => import('@/views/alert-management/index.vue'),
     meta: { title: '预警管理', icon: AlertOutlined, group: 'alert-management' }
+  },
+  {
+    path: '/data-management/unit-fixed-investment',
+    name: 'UnitFixedInvestment',
+    component: () => import('@/views/data-management/unit-fixed-investment/index.vue'),
+    meta: { title: '责任单位固投', icon: TableOutlined, group: 'data-management' }
   },
   {
     path: '/workbench',

@@ -4,6 +4,7 @@ import * as echarts from 'echarts';
 import type { TableColumnType } from 'ant-design-vue';
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { overviewApi } from '@/api/supplement-pool';
+import { UNIT_FIXED_INVESTMENT_UPDATED_EVENT } from '@/mock/unit-fixed-investment-store';
 import type {
   ProjectOverviewDashboard,
   UnitCategory,
@@ -143,10 +144,12 @@ watch(unitCategory, async () => {
 onMounted(() => {
   loadDashboard();
   window.addEventListener('resize', handleResize);
+  window.addEventListener(UNIT_FIXED_INVESTMENT_UPDATED_EVENT, loadDashboard);
 });
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', handleResize);
+  window.removeEventListener(UNIT_FIXED_INVESTMENT_UPDATED_EVENT, loadDashboard);
   economicChart?.dispose();
   economicChart = null;
 });

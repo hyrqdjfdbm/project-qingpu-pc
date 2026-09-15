@@ -47,6 +47,7 @@ type SeedInput = {
   projectName: string;
   projectCode: string;
   nodeName?: string;
+  subtypeTag?: string;
   relatedMatter?: string;
   sourceModule: WorkbenchSourceModule;
   sourceBizId: string;
@@ -60,9 +61,7 @@ type SeedInput = {
 
 const DUE_DATE_MODULES: WorkbenchSourceModule[] = [
   'leader-assign',
-  'problem-coord',
-  'progress-fund',
-  'progress-schedule'
+  'problem-coord'
 ];
 
 function makeTask(seed: SeedInput): WorkbenchTask {
@@ -83,6 +82,7 @@ function makeTask(seed: SeedInput): WorkbenchTask {
     projectName: seed.projectName,
     projectCode: seed.projectCode,
     nodeName: seed.nodeName,
+    subtypeTag: seed.subtypeTag,
     relatedMatter: seed.relatedMatter,
     sourceModule: seed.sourceModule,
     sourceBizId: seed.sourceBizId,
@@ -127,7 +127,7 @@ const records: WorkbenchTask[] = [
     title: '项目节点待审核：专员已提交填报',
     projectName: '青浦新城综合提升工程',
     projectCode: 'QP-JD-2026-012',
-    nodeName: '施工许可证取得',
+    nodeName: '施工许可证',
     sourceModule: 'node-audit',
     sourceBizId: 'na-012',
     status: 'pending_review',
@@ -193,7 +193,7 @@ const records: WorkbenchTask[] = [
     status: 'pending_dispose',
     receivedOffsetH: -14,
     dueOffsetH: 36,
-    summary: '审核退回，请完善退库佐证后重新申报。'
+    summary: '审核退回，请修改后重新申报。'
   }),
   makeTask({
     assigneeId: supervisor,
@@ -237,7 +237,7 @@ const records: WorkbenchTask[] = [
     status: 'pending_dispose',
     receivedOffsetH: -30,
     dueOffsetH: -1,
-    summary: '初审/终审退回，请补全信息后重新提交。'
+    summary: '审核退回，请修改后重新申报。'
   }),
   makeTask({
     assigneeId: supervisor,
@@ -460,7 +460,7 @@ const records: WorkbenchTask[] = [
     assigneeId: specialist,
     bizStatus: '未销号',
     actionCode: 'alert_close',
-    title: '预警未销号：形象进度连续两月滞后',
+    title: '预警信息未销号：超出计划完成时间未完成农转用批复，计划完成时间：2026-01-01。',
     projectName: '徐泾镇公共服务设施提升项目',
     projectCode: 'QP-YJ-2026-015',
     sourceModule: 'alert-management',
@@ -468,13 +468,14 @@ const records: WorkbenchTask[] = [
     status: 'pending_dispose',
     receivedOffsetH: -18,
     dueOffsetH: 6,
-    summary: '红/黄灯预警尚未销号，请销号或处置。'
+    subtypeTag: '红灯-超期未农转用批复',
+    summary: '预警尚未销号，请及时办理销号或处置。'
   }),
   makeTask({
     assigneeId: specialist,
     bizStatus: '已销号未处置',
     actionCode: 'dispose',
-    title: '预警已销号未处置：请补充处置措施',
+    title: '预警信息已销号未处置：超出计划完成时间未完成农转用批复，计划完成时间：2026-01-01。',
     projectName: '重固镇水系连通工程',
     projectCode: 'QP-YJ-2026-009',
     sourceModule: 'alert-management',
@@ -482,55 +483,25 @@ const records: WorkbenchTask[] = [
     status: 'pending_dispose',
     receivedOffsetH: -10,
     dueOffsetH: 30,
-    summary: '已销号但仍需完成处置填报。'
+    subtypeTag: '黄灯-超期未农转用批复',
+    summary: '预警已销号但尚未处置，请及时进行处置。'
+  }),
+  makeTask({
+    assigneeId: specialist,
+    bizStatus: '未阅',
+    actionCode: 'acknowledge',
+    title: '预警信息未阅：超出计划完成时间未完成农转用批复，计划完成时间：2026-01-01。',
+    projectName: '徐泾镇公共服务设施提升项目',
+    projectCode: 'QP-JC-2026-015',
+    sourceModule: 'monitor-response',
+    sourceBizId: 'mr-015',
+    status: 'pending_read',
+    receivedOffsetH: -5,
+    subtypeTag: '监测响应-超期未征地二公告预警抄送',
+    summary: '预警信息尚未阅知，请及时查阅当前页面并办理阅知。'
   }),
 
-  // —— 8/9 上级资金 / 形象进度填报 ——
-  makeTask({
-    assigneeId: specialist,
-    bizStatus: '本月未填报',
-    actionCode: 'report',
-    title: '项目上级资金信息填报：本月未填报',
-    projectName: '重固镇水系连通工程',
-    projectCode: 'QP-ZJ-2026-009',
-    sourceModule: 'progress-fund',
-    sourceBizId: 'pf-2026-08',
-    status: 'pending_dispose',
-    tags: ['项目上级资金信息填报', '本月未填报', '项目详情'],
-    receivedOffsetH: -48,
-    dueOffsetH: 72,
-    summary: '本月上级资金信息尚未填报，请尽快填报（可从【项目详情】进入）。'
-  }),
-  makeTask({
-    assigneeId: specialist,
-    bizStatus: '本周未填报形象进度',
-    actionCode: 'report',
-    title: '项目形象进度信息填报：本周未填报形象进度',
-    projectName: '重固镇水系连通工程',
-    projectCode: 'QP-JDXX-2026-009',
-    sourceModule: 'progress-schedule',
-    sourceBizId: 'ps-2026-w32',
-    status: 'pending_dispose',
-    receivedOffsetH: -16,
-    dueOffsetH: 36,
-    summary: '本周形象进度尚未填报（2026-08-11至2026-08-15），请尽快填报。'
-  }),
-  makeTask({
-    assigneeId: specialist,
-    bizStatus: '本月未填报形象进度资金',
-    actionCode: 'report',
-    title: '项目形象进度信息填报：本月未填报形象进度资金',
-    projectName: '重固镇水系连通工程',
-    projectCode: 'QP-JDXX-2026-009',
-    sourceModule: 'progress-schedule',
-    sourceBizId: 'ps-2026-08-fund',
-    status: 'pending_dispose',
-    receivedOffsetH: -40,
-    dueOffsetH: 48,
-    summary: '本月形象进度资金尚未填报，请尽快填报。'
-  }),
-
-  // —— 10/11 催办提示（C1：pending_read 计入待查阅） ——
+  // —— 催办提示（C1：pending_read 计入待查阅） ——
   makeTask({
     assigneeId: specialist,
     bizStatus: '催办提示',

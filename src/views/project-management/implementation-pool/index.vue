@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import type { TableColumnType } from 'ant-design-vue';
 import { computed, onMounted, reactive, ref } from 'vue';
+import { useRouter } from 'vue-router';
+import { progressFundReportApi } from '@/api/progress-fund-report';
 import { projectsApi } from '@/api/supplement-pool';
-import ProjectDetailDrawer from '../supplement-pool/components/ProjectDetailDrawer.vue';
 import type {
   InvestRange,
   ProjectStatus,
@@ -16,6 +17,9 @@ import {
   RESPONSIBLE_UNIT_OPTIONS,
   STREET_TOWN_OPTIONS
 } from '@/types/supplement-pool';
+import { mapProgressToPool } from './map-progress-project';
+
+const router = useRouter();
 
 const searchForm = reactive({
   keyword: '',
@@ -29,8 +33,6 @@ const searchForm = reactive({
 const tableData = ref<SupplementProjectItem[]>([]);
 const loading = ref(false);
 const pagination = reactive({ current: 1, pageSize: 10 });
-const detailOpen = ref(false);
-const viewingItem = ref<SupplementProjectItem | null>(null);
 
 const columns: TableColumnType[] = [
   { title: '项目名称', dataIndex: 'projectName', key: 'projectName', width: 220, ellipsis: true },
@@ -51,15 +53,24 @@ const pagedData = computed(() => {
 async function loadList() {
   loading.value = true;
   try {
-    tableData.value = await projectsApi.getList({
-      poolStage: 'implementation',
-      keyword: searchForm.keyword || undefined,
-      projectType: searchForm.projectType,
-      investRange: searchForm.investRange,
-      streetTown: searchForm.streetTown,
-      responsibleUnit: searchForm.responsibleUnit,
-      status: searchForm.status
-    });
+    const [poolList, progressList] = await Promise.all([
+      projectsApi.getList({
+        poolStage: 'implementation',
+        keyword: searchForm.keyword || undefined,
+        projectType: searchForm.projectType,
+        investRange: searchForm.investRange,
+        streetTown: searchForm.streetTown,
+        responsibleUnit: searchForm.responsibleUnit,
+        status: searchForm.status
+      }),
+      progressFundReportApi.list({ keyword: searchForm.keyword || undefined })
+    ]);
+    const merged = [...poolList];
+    for (const item of progressList.map(mapProgressToPool)) {
+      if (merged.some((row) => row.id === item.id || row.projectCode === item.projectCode)) continue;
+      merged.push(item);
+    }
+    tableData.value = merged;
   } finally {
     loading.value = false;
   }
@@ -85,9 +96,8 @@ function handleReset() {
   loadList();
 }
 
-async function openDetail(record: SupplementProjectItem) {
-  viewingItem.value = await projectsApi.getById(record.id);
-  detailOpen.value = true;
+function openDetail(record: SupplementProjectItem) {
+  router.push(`/project-management/implementation-pool/${record.id}`);
 }
 
 function onTableChange(pag: { current?: number; pageSize?: number }) {
@@ -156,7 +166,5 @@ function onTableChange(pag: { current?: number; pageSize?: number }) {
         </template>
       </das-table>
     </div>
-
-    <ProjectDetailDrawer v-model:open="detailOpen" :record="viewingItem" />
   </div>
 </template>

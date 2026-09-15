@@ -8,7 +8,8 @@ import {
   WORKBENCH_STATUS_LABEL,
   WORKBENCH_STATUS_OPTIONS,
   WORKBENCH_OVERDUE_OPTIONS,
-  WORKBENCH_SOURCE_MODULE_OPTIONS
+  WORKBENCH_SOURCE_MODULE_OPTIONS,
+  matchesWorkbenchSourceFilter
 } from '@/types/workbench';
 
 import type {
@@ -32,6 +33,8 @@ const demoRoles = [
   'projectSpecialist',
   'supervisor',
   'districtSpecialist',
+  'jingweiAuditor',
+  'fagaiAuditor',
   'cityLeader',
   'deptHead',
   'admin'
@@ -41,6 +44,8 @@ const demoRoleLabel: Record<DemoRole, string> = {
   projectSpecialist: APP_ROLE_LABEL.projectSpecialist,
   supervisor: APP_ROLE_LABEL.supervisor,
   districtSpecialist: APP_ROLE_LABEL.districtSpecialist,
+  jingweiAuditor: APP_ROLE_LABEL.jingweiAuditor,
+  fagaiAuditor: APP_ROLE_LABEL.fagaiAuditor,
   cityLeader: APP_ROLE_LABEL.cityLeader,
   deptHead: APP_ROLE_LABEL.deptHead,
   admin: APP_ROLE_LABEL.admin
@@ -99,8 +104,7 @@ const filteredData = computed(() => {
 
   return tasks.value.filter((task) => {
     if (kw && !matchKeyword(task, kw)) return false;
-    if (sourceModuleFilter.value !== 'all' && task.sourceModule !== sourceModuleFilter.value)
-      return false;
+    if (!matchesWorkbenchSourceFilter(task.sourceModule, sourceModuleFilter.value)) return false;
     if (statusFilter.value !== 'all' && task.status !== statusFilter.value) return false;
 
     if (start && end) {
@@ -142,12 +146,16 @@ function getSourceLabel(source: unknown) {
   return WORKBENCH_SOURCE_MODULE_LABEL[source as WorkbenchSourceModule] ?? '—';
 }
 
-/** 仅领导交办、难题协调、资金填报、进度填报展示截止时间 */
+function getSubtypeTagColor(tag: string) {
+  if (tag.startsWith('红灯')) return 'red';
+  if (tag.startsWith('黄灯')) return 'gold';
+  return 'purple';
+}
+
+/** 仅领导交办、难题协调展示截止时间 */
 const DUE_DATE_SOURCE_MODULES: WorkbenchSourceModule[] = [
   'leader-assign',
-  'problem-coord',
-  'progress-fund',
-  'progress-schedule'
+  'problem-coord'
 ];
 
 function showDueDate(task: WorkbenchTask) {
@@ -393,6 +401,9 @@ onMounted(loadTasks);
                   <span>{{ getSourceLabel(task.sourceModule) }}</span>
                   <a-tag color="cyan">{{ task.bizStatus }}</a-tag>
                   <a-tag color="blue">动作：{{ task.actionLabel.replace(/^去/, '') }}</a-tag>
+                  <a-tag v-if="task.subtypeTag" :color="getSubtypeTagColor(task.subtypeTag)">
+                    {{ task.subtypeTag }}
+                  </a-tag>
                   <a-tag v-if="task.nodeName" color="geekblue">节点：{{ task.nodeName }}</a-tag>
                   <span>{{ task.projectName || '—' }}</span>
                   <span v-if="task.projectCode" class="workbench-task-card__code">（{{ task.projectCode }}）</span>
@@ -452,7 +463,8 @@ onMounted(loadTasks);
       :width="680"
       destroy-on-close
       :confirm-loading="submitting"
-      ok-text="确定"
+      :ok-text="detailTask?.actionCode === 'urge_view' ? '知道了' : '确定'"
+      :cancel-text="detailTask?.actionCode === 'urge_view' ? '关闭' : '取消'"
       @ok="submitTask"
       @cancel="detailOpen = false"
     >
@@ -466,6 +478,9 @@ onMounted(loadTasks);
           </a-descriptions-item>
           <a-descriptions-item label="应做动作">
             {{ detailTask.actionLabel }}
+          </a-descriptions-item>
+          <a-descriptions-item v-if="detailTask.subtypeTag" label="预警类型">
+            {{ detailTask.subtypeTag }}
           </a-descriptions-item>
           <a-descriptions-item label="工作台状态">
             {{ getStatusLabel(detailTask.status) }}
@@ -525,7 +540,7 @@ onMounted(loadTasks);
 
         <div v-if="detailTask.actionCode === 'urge_view'">
           <div class="modal-hint">
-            一般性催办提示：请关注相关事项并尽快办理。点击确定将标记本条提示为已阅（不替代业务处置待办）。
+            一般性催办提示：请关注相关事项并尽快办理。点「关闭」仅关闭弹窗，待办仍保留；点「知道了」才标记已阅并从列表移除（不替代业务处置待办）。
           </div>
         </div>
 

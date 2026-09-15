@@ -27,7 +27,7 @@ export type DrawAttachmentCategoryKey = (typeof DRAW_ATTACHMENT_CATEGORIES)[numb
 export function getDrawAttachmentDisplayLabel(key: DrawAttachmentCategoryKey): string {
   const item = DRAW_ATTACHMENT_CATEGORIES.find((category) => category.key === key);
   if (!item) return key;
-  return 'seq' in item && item.seq != null ? `${item.seq}、${item.label}` : item.label;
+  return `${item.seq}、${item.label}`;
 }
 
 export const DRAW_ATTACHMENT_CATEGORY_LABEL: Record<DrawAttachmentCategoryKey, string> =

@@ -9,6 +9,7 @@ import type {
   UnitEconomicItem,
   UnitPivotRow
 } from '@/types/overview';
+import { unitFixedInvestmentStore } from '@/mock/unit-fixed-investment-store';
 
 const CURRENT_YEAR = 2026;
 /** 进度同比分析2 口径年份：当期 2026 vs 同期 2025 */
@@ -68,12 +69,16 @@ function buildRows(names: string[], baseSeed: number): UnitPivotRow[] {
   });
 }
 
-function buildEconomic(rows: UnitPivotRow[]): UnitEconomicItem[] {
-  return rows.map((row) => ({
-    unitName: row.unitName,
-    fixedInvestment: round1(row.totalInvestment * 0.72),
-    imageProgressAmount: row.imageProgressInvestment
-  }));
+function buildEconomic(rows: UnitPivotRow[], year: number, month: number): UnitEconomicItem[] {
+  return rows.map((row) => {
+    const fromLedger = unitFixedInvestmentStore.getAmountYiOrNull(year, month, row.unitName);
+    return {
+      unitName: row.unitName,
+      fixedInvestment:
+        fromLedger != null ? fromLedger : round1(row.totalInvestment * 0.72),
+      imageProgressAmount: row.imageProgressInvestment
+    };
+  });
 }
 
 function makeRatePoint(label: string, currentRate: number, previousRate: number): RateYoYPoint {
@@ -218,6 +223,7 @@ function buildProgressRateYoY2(): ProgressYoY2Data {
 }
 
 export function getProjectOverviewDashboard(): ProjectOverviewDashboard {
+  const chartMonth = new Date().getMonth() + 1;
   const unitPivotByCategory: Record<UnitCategory, UnitPivotRow[]> = {
     street: buildRows(UNIT_NAMES.street, 3),
     gov: buildRows(UNIT_NAMES.gov, 6),
@@ -251,9 +257,9 @@ export function getProjectOverviewDashboard(): ProjectOverviewDashboard {
     ],
     unitPivotByCategory,
     economicAnalysisByCategory: {
-      street: buildEconomic(unitPivotByCategory.street),
-      gov: buildEconomic(unitPivotByCategory.gov),
-      soe: buildEconomic(unitPivotByCategory.soe)
+      street: buildEconomic(unitPivotByCategory.street, CURRENT_YEAR, chartMonth),
+      gov: buildEconomic(unitPivotByCategory.gov, CURRENT_YEAR, chartMonth),
+      soe: buildEconomic(unitPivotByCategory.soe, CURRENT_YEAR, chartMonth)
     },
     progressRateYoY: {
       month: pack('month'),

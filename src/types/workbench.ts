@@ -1,4 +1,4 @@
-/** 工作台来源业务（V1.2：11 类） */
+/** 工作台来源业务 */
 export type WorkbenchSourceModule =
   | 'node-audit'
   | 'planning-pool'
@@ -7,8 +7,7 @@ export type WorkbenchSourceModule =
   | 'leader-assign'
   | 'problem-coord'
   | 'alert-management'
-  | 'progress-fund'
-  | 'progress-schedule'
+  | 'monitor-response'
   | 'urge-coord'
   | 'urge-assign';
 
@@ -31,6 +30,7 @@ export type WorkbenchActionCode =
   | 'read'
   | 'urge_view'
   | 'alert_close'
+  | 'acknowledge'
   | 'superior_audit';
 
 export const WORKBENCH_ACTION_LABEL: Record<WorkbenchActionCode, string> = {
@@ -44,6 +44,7 @@ export const WORKBENCH_ACTION_LABEL: Record<WorkbenchActionCode, string> = {
   read: '去查阅',
   urge_view: '查看处置',
   alert_close: '去销号/处置',
+  acknowledge: '去阅知',
   superior_audit: '去审核'
 };
 
@@ -75,6 +76,8 @@ export interface WorkbenchTask {
   projectCode?: string;
   /** 项目节点审核：处置的具体节点名称 */
   nodeName?: string;
+  /** 预警类：动作后的类型标签，如「红灯-超期未农转用批复」 */
+  subtypeTag?: string;
   /** 催办等：关联事项内容 */
   relatedMatter?: string;
   sourceModule: WorkbenchSourceModule;
@@ -132,20 +135,36 @@ export const WORKBENCH_SOURCE_MODULE_LABEL: Record<WorkbenchSourceModule, string
   'supplement-library': '增补库',
   'leader-assign': '领导交办',
   'problem-coord': '难题协调',
-  'alert-management': '预警管理',
-  'progress-fund': '项目上级资金信息填报',
-  'progress-schedule': '项目形象进度信息填报',
+  'alert-management': '预警信息',
+  'monitor-response': '预警信息',
   'urge-coord': '协调催办',
   'urge-assign': '交办催办'
 };
 
+/** 来源筛选：同名来源合并为一项（红黄灯 / 监测响应均展示为「预警信息」） */
 export const WORKBENCH_SOURCE_MODULE_OPTIONS: Array<{
   value: WorkbenchSourceModule | 'all';
   label: string;
-}> = [
-  { value: 'all', label: '全部来源' },
-  ...Object.entries(WORKBENCH_SOURCE_MODULE_LABEL).map(([k, v]) => ({
-    value: k as WorkbenchSourceModule,
-    label: v
-  }))
-];
+}> = (() => {
+  const seen = new Set<string>();
+  const unique = Object.entries(WORKBENCH_SOURCE_MODULE_LABEL).filter(([, label]) => {
+    if (seen.has(label)) return false;
+    seen.add(label);
+    return true;
+  });
+  return [
+    { value: 'all', label: '全部来源' },
+    ...unique.map(([k, v]) => ({
+      value: k as WorkbenchSourceModule,
+      label: v
+    }))
+  ];
+})();
+
+export function matchesWorkbenchSourceFilter(
+  sourceModule: WorkbenchSourceModule,
+  filter: WorkbenchSourceModule | 'all'
+) {
+  if (filter === 'all') return true;
+  return WORKBENCH_SOURCE_MODULE_LABEL[sourceModule] === WORKBENCH_SOURCE_MODULE_LABEL[filter];
+}
