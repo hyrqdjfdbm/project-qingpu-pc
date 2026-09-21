@@ -135,7 +135,7 @@ async function submit() {
           option-filter-prop="label"
           :options="projectOptions"
           placeholder="请输入项目代码｜项目名称｜项目简称"
-          @change="(v: string) => fillFromProject(v)"
+          @change="(v) => fillFromProject(typeof v === 'string' ? v : '')"
         />
       </a-form-item>
       <a-form-item label="退库原因" name="reason">
