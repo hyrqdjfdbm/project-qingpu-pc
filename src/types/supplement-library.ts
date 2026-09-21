@@ -31,7 +31,7 @@ export function getSupplementLibraryStatusColor(status: SupplementLibraryStatus)
   return map[status];
 }
 
-/** 项目属地：与实施库街镇一致（青浦） */
+/** 纳统归属：与实施库街镇/区属口径一致（青浦） */
 export const SL_TERRITORY_OPTIONS = STREET_TOWN_OPTIONS;
 
 /** 项目责任单位：与实施库一致 */

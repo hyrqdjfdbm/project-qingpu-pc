@@ -50,7 +50,7 @@ const columns: TableColumnType<SupplementLibraryItem>[] = [
   { title: '项目名称', key: 'projectName', width: 220, ellipsis: true },
   { title: '项目代码', key: 'projectCode', width: 150 },
   { title: '总投资（万元）', key: 'totalInvestment', width: 120, align: 'right' },
-  { title: '项目属地', key: 'territory', width: 110 },
+  { title: '纳统归属', key: 'territory', width: 110 },
   { title: '责任单位', key: 'responsibleUnits', width: 140, ellipsis: true },
   { title: '申请人', key: 'applicant', width: 90 },
   { title: '申请时间', key: 'submittedAt', width: 160 },
@@ -133,7 +133,7 @@ onMounted(() => {
             style="width: 280px"
           />
         </a-form-item>
-        <a-form-item label="项目属地">
+        <a-form-item label="纳统归属">
           <a-select
             v-model:value="filters.territory"
             allow-clear

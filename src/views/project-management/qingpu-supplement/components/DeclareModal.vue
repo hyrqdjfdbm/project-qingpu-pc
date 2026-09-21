@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import type { FormInstance, Rule } from 'ant-design-vue/es/form';
-import { message } from 'ant-design-vue';
+import { Modal, message } from 'ant-design-vue';
 import { computed, reactive, ref, watch } from 'vue';
-import { projectsApi } from '@/api/supplement-pool';
 import { qingpuSupplementApi } from '@/api/qingpu-supplement';
 import { getCurrentUser } from '@/mock/current-user';
 import {
@@ -11,11 +10,10 @@ import {
   QP_PERMIT_OPTIONS,
   QP_PROJECT_ATTRIBUTE_OPTIONS,
   QP_PROJECT_CATEGORY_OPTIONS,
-  QP_PROJECT_LEVEL_OPTIONS,
   QP_RESPONSIBLE_UNIT_OPTIONS,
   QP_TERRITORY_OPTIONS,
-  QP_YES_NO_OPTIONS,
   createEmptyQingpuSupplementForm,
+  isQingpuBelongingMismatch,
   isSocialInvestmentCategory,
   type QingpuSupplementForm,
   type QingpuSupplementItem
@@ -37,25 +35,24 @@ const currentStep = ref(0);
 const form = reactive<QingpuSupplementForm>(createEmptyQingpuSupplementForm());
 const nodeCompleteDate = ref('');
 const nodeNotInvolved = ref(false);
-const implOptions = ref<{ value: string; label: string }[]>([]);
 
 const isEdit = computed(() => Boolean(props.record));
 const isLastStep = computed(() => currentStep.value >= 3);
-const isMainProject = computed(() => form.projectLevel === '主项目');
 const isSocial = computed(() => isSocialInvestmentCategory(form.projectCategory || ''));
 const nodeTitle = computed(() => (isSocial.value ? '形象方案' : '项建书'));
+const applicantUnit = computed(() => props.record?.applicantUnit || getCurrentUser().unit);
+const belongingMismatch = computed(() =>
+  isQingpuBelongingMismatch(applicantUnit.value, form.territory)
+);
 
 const STEP_FIELDS: string[][] = [
   [
     'projectName',
-    'projectLevel',
-    'hasRelatedSubProjects',
-    'subProjectCodes',
-    'relatedParentProjectCode',
     'unitName',
     'projectStatus',
     'territory',
     'responsibleUnits',
+    'agencyUnit',
     'projectAttribute',
     'projectCategory'
   ],
@@ -72,32 +69,11 @@ const STEP_FIELDS: string[][] = [
 
 const rules: Record<string, Rule[]> = {
   projectName: [{ required: true, message: '请输入项目名称' }],
-  projectLevel: [{ required: true, message: '请选择项目层级' }],
-  hasRelatedSubProjects: [{ required: true, message: '请选择是否有关联子项目' }],
-  subProjectCodes: [
-    {
-      validator: async () => {
-        if (isMainProject.value && form.hasRelatedSubProjects && !form.subProjectCodes.length) {
-          return Promise.reject('请选择子项目代码');
-        }
-        return Promise.resolve();
-      }
-    }
-  ],
-  relatedParentProjectCode: [
-    {
-      validator: async () => {
-        if (!isMainProject.value && !form.relatedParentProjectCode) {
-          return Promise.reject('请选择关联主项目');
-        }
-        return Promise.resolve();
-      }
-    }
-  ],
   unitName: [{ required: true, message: '请输入项目单位名称' }],
   projectStatus: [{ required: true, message: '请输入项目状态' }],
-  territory: [{ required: true, message: '请选择项目属地' }],
+  territory: [{ required: true, message: '请选择纳统归属' }],
   responsibleUnits: [{ required: true, type: 'array', min: 1, message: '请选择项目责任单位' }],
+  agencyUnit: [{ required: true, message: '请选择项目代建单位' }],
   projectAttribute: [{ required: true, message: '请选择项目属性' }],
   projectCategory: [{ required: true, message: '请选择项目类别' }],
   constructionSite: [{ required: true, message: '请输入建设地点' }],
@@ -110,7 +86,7 @@ const rules: Record<string, Rule[]> = {
 
 watch(
   () => props.open,
-  async (open) => {
+  (open) => {
     if (!open) return;
     currentStep.value = 0;
     Object.assign(form, createEmptyQingpuSupplementForm());
@@ -120,7 +96,6 @@ watch(
       Object.assign(form, {
         ...createEmptyQingpuSupplementForm(),
         ...props.record,
-        subProjectCodes: [...(props.record.subProjectCodes || [])],
         responsibleUnits: [...props.record.responsibleUnits]
       });
       const node = isSocialInvestmentCategory(props.record.projectCategory)
@@ -129,30 +104,6 @@ watch(
       nodeCompleteDate.value = node?.completeDate || '';
       nodeNotInvolved.value = Boolean(node?.notInvolved);
     }
-    const impl = await projectsApi.getList({ poolStage: 'implementation' });
-    implOptions.value = impl.map((p) => ({
-      value: p.projectCode,
-      label: `${p.projectCode}　${p.projectName}`
-    }));
-  }
-);
-
-watch(
-  () => form.projectLevel,
-  (level) => {
-    if (level === '子项目') {
-      form.hasRelatedSubProjects = false;
-      form.subProjectCodes = [];
-    } else {
-      form.relatedParentProjectCode = undefined;
-    }
-  }
-);
-
-watch(
-  () => form.hasRelatedSubProjects,
-  (val) => {
-    if (!val) form.subProjectCodes = [];
   }
 );
 
@@ -162,6 +113,27 @@ watch(nodeNotInvolved, (val) => {
 
 function close() {
   emit('update:open', false);
+}
+
+function belongingMismatchText() {
+  if (form.territory === '区属') {
+    return `申报单位为「${applicantUnit.value}」，不属于区属。纳统归属已选「区属」。`;
+  }
+  return `申报单位为「${applicantUnit.value}」，纳统归属为「${form.territory}」。`;
+}
+
+function confirmMismatchIfNeeded() {
+  if (!belongingMismatch.value) return Promise.resolve(true);
+  return new Promise<boolean>((resolve) => {
+    Modal.confirm({
+      title: '申报单位与纳统归属不一致',
+      content: `${belongingMismatchText()}是否继续？`,
+      okText: '继续',
+      cancelText: '返回修改',
+      onOk: () => resolve(true),
+      onCancel: () => resolve(false)
+    });
+  });
 }
 
 async function validateCurrentStep() {
@@ -180,11 +152,6 @@ async function validateCurrentStep() {
         return false;
       }
       const user = getCurrentUser();
-      const territoryValues = QP_TERRITORY_OPTIONS.map((o) => o.value);
-      if (isSocial.value && territoryValues.includes(user.unit) && user.unit !== form.territory) {
-        message.warning('社会投资项目的申请人单位须与项目属地一致');
-        return false;
-      }
       if (!isSocial.value && !form.responsibleUnits.includes(user.unit) && user.role !== 'admin') {
         message.warning('政府投资/其他项目的申请人单位须包含在责任单位范围内');
         return false;
@@ -209,6 +176,10 @@ async function validateCurrentStep() {
 async function nextStep() {
   const ok = await validateCurrentStep();
   if (!ok) return;
+  if (currentStep.value === 0) {
+    const continueOk = await confirmMismatchIfNeeded();
+    if (!continueOk) return;
+  }
   currentStep.value += 1;
 }
 
@@ -224,8 +195,6 @@ function payload(): QingpuSupplementForm {
   };
   return {
     ...form,
-    subProjectCodes: isMainProject.value && form.hasRelatedSubProjects ? form.subProjectCodes : [],
-    relatedParentProjectCode: isMainProject.value ? undefined : form.relatedParentProjectCode,
     imageScheme: isSocial.value ? node : undefined,
     proposalDoc: isSocial.value ? undefined : node
   };
@@ -272,49 +241,18 @@ async function submit() {
 
     <a-form ref="formRef" :model="form" :rules="rules" layout="vertical">
       <div v-show="currentStep === 0">
+        <a-alert
+          v-if="belongingMismatch"
+          type="warning"
+          show-icon
+          class="mismatch-alert"
+          message="申报单位与纳统归属不一致"
+          :description="belongingMismatchText()"
+        />
         <a-row :gutter="16">
           <a-col :span="12">
             <a-form-item label="项目名称" name="projectName">
               <a-input v-model:value="form.projectName" placeholder="请输入项目名称" />
-            </a-form-item>
-          </a-col>
-          <a-col :span="12">
-            <a-form-item label="项目层级" name="projectLevel">
-              <a-select
-                v-model:value="form.projectLevel"
-                :options="QP_PROJECT_LEVEL_OPTIONS"
-                placeholder="请选择"
-              />
-            </a-form-item>
-          </a-col>
-          <a-col v-if="isMainProject" :span="12">
-            <a-form-item label="是否有关联子项目" name="hasRelatedSubProjects">
-              <a-radio-group v-model:value="form.hasRelatedSubProjects" :options="QP_YES_NO_OPTIONS" />
-            </a-form-item>
-          </a-col>
-          <a-col v-if="isMainProject && form.hasRelatedSubProjects" :span="24">
-            <a-form-item label="子项目代码" name="subProjectCodes">
-              <a-select
-                v-model:value="form.subProjectCodes"
-                mode="multiple"
-                allow-clear
-                show-search
-                option-filter-prop="label"
-                :options="implOptions"
-                placeholder="搜索实施库项目代码 / 名称"
-              />
-            </a-form-item>
-          </a-col>
-          <a-col v-if="!isMainProject" :span="24">
-            <a-form-item label="关联主项目" name="relatedParentProjectCode">
-              <a-select
-                v-model:value="form.relatedParentProjectCode"
-                allow-clear
-                show-search
-                option-filter-prop="label"
-                :options="implOptions"
-                placeholder="搜索实施库主项目"
-              />
             </a-form-item>
           </a-col>
           <a-col :span="12">
@@ -324,11 +262,11 @@ async function submit() {
           </a-col>
           <a-col :span="12">
             <a-form-item label="项目状态" name="projectStatus">
-              <a-input v-model:value="form.projectStatus" placeholder="如：前期、在建、竣工" />
+              <a-input v-model:value="form.projectStatus" placeholder="如施工阶段" />
             </a-form-item>
           </a-col>
           <a-col :span="12">
-            <a-form-item label="项目属地" name="territory">
+            <a-form-item label="纳统归属" name="territory">
               <a-select
                 v-model:value="form.territory"
                 show-search
@@ -354,9 +292,9 @@ async function submit() {
             <a-form-item label="项目代建单位" name="agencyUnit">
               <a-select
                 v-model:value="form.agencyUnit"
-                allow-clear
+                show-search
                 :options="QP_AGENCY_UNIT_OPTIONS"
-                placeholder="选填"
+                placeholder="请选择"
               />
             </a-form-item>
           </a-col>
@@ -514,6 +452,9 @@ async function submit() {
 <style scoped>
 .declare-steps {
   margin-bottom: 20px;
+}
+.mismatch-alert {
+  margin-bottom: 16px;
 }
 .node-alert {
   margin-bottom: 16px;

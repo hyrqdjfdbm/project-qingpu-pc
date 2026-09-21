@@ -164,7 +164,7 @@ const STEP1_FIELDS = [
 
 const step0Rules: Record<string, Rule[]> = {
   projectName: [{ required: true, message: '请输入项目名称' }],
-  projectLocation: [{ required: true, message: '请选择项目属地' }],
+  projectLocation: [{ required: true, message: '请选择纳统归属' }],
   totalInvestment: [{ required: true, type: 'number', message: '请输入总投资' }],
   responsibleUnits: [{ required: true, type: 'array', min: 1, message: '请选择责任单位' }]
 };
@@ -280,10 +280,10 @@ function filterSubProject(input: string, option: { label?: string }) {
             </a-form-item>
           </a-col>
           <a-col :span="12">
-            <a-form-item label="项目属地" name="projectLocation">
+            <a-form-item label="纳统归属" name="projectLocation">
               <a-select
                 v-model:value="form.projectLocation"
-                placeholder="请选择项目属地"
+                placeholder="请选择纳统归属"
                 :options="STREET_TOWN_OPTIONS"
               />
             </a-form-item>

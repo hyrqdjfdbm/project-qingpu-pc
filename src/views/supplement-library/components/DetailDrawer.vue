@@ -63,7 +63,7 @@ function natureText(record: SupplementLibraryItem) {
           }}
         </a-descriptions-item>
         <a-descriptions-item label="项目代码">{{ record.projectCode || '—' }}</a-descriptions-item>
-        <a-descriptions-item label="项目属地">{{ record.territory }}</a-descriptions-item>
+        <a-descriptions-item label="纳统归属">{{ record.territory }}</a-descriptions-item>
         <a-descriptions-item label="项目单位名称" :span="2">{{ record.unitName }}</a-descriptions-item>
         <a-descriptions-item label="证照号码">{{ record.unitLicenseNo }}</a-descriptions-item>
         <a-descriptions-item label="责任单位">{{ record.responsibleUnits.join('、') }}</a-descriptions-item>

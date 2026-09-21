@@ -27,6 +27,8 @@ const openKeys = ref<string[]>([
   'project-management',
   'pm-implementation-library',
   'pm-qingpu-supplement',
+  'pm-qingpu-withdraw-biz',
+  'pm-qingpu-withdraw-pool',
   'route-planning',
   'meeting-coordination',
   'work-suspend',
@@ -109,6 +111,12 @@ function resolveOpenKey(path: string) {
   if (path.startsWith('/reserve-pool/audit')) return ['reserve-pool', 'reserve-pool-audit'];
   if (path.startsWith('/reserve-pool')) return ['reserve-pool'];
   if (path.startsWith('/supplement-library')) return ['supplement-library'];
+  if (path.startsWith('/project-management/qingpu-withdraw-pool')) {
+    return ['project-management', 'pm-qingpu-withdraw-pool'];
+  }
+  if (path.startsWith('/project-management/qingpu-withdraw')) {
+    return ['project-management', 'pm-qingpu-withdraw-biz'];
+  }
   if (path.startsWith('/project-management/qingpu-supplement')) {
     return ['project-management', 'pm-qingpu-supplement'];
   }

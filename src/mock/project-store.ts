@@ -40,7 +40,8 @@ function filterProjects(query: SupplementProjectQuery) {
     result = result.filter(
       (p) =>
         p.projectName.toLowerCase().includes(kw) ||
-        p.projectCode.toLowerCase().includes(kw)
+        p.projectCode.toLowerCase().includes(kw) ||
+        (p.projectAbbr || '').toLowerCase().includes(kw)
     );
   }
   if (query.projectType) {
@@ -120,6 +121,23 @@ export const projectStore = {
     const idx = projects.findIndex((p) => p.id === id);
     if (idx < 0) return null;
     projects[idx] = { ...projects[idx], poolStage };
+    return projects[idx];
+  },
+
+  /** 退库审核通过后从实施库移除展示 */
+  exitImplementation(id: string) {
+    const idx = projects.findIndex((p) => p.id === id);
+    if (idx < 0) return null;
+    if (projects[idx].poolStage !== 'implementation') return projects[idx];
+    projects[idx] = { ...projects[idx], poolStage: 'supplement' };
+    return projects[idx];
+  },
+
+  /** 已退库项目恢复至实施库 */
+  restoreImplementation(id: string) {
+    const idx = projects.findIndex((p) => p.id === id);
+    if (idx < 0) return null;
+    projects[idx] = { ...projects[idx], poolStage: 'implementation', status: 'stored' };
     return projects[idx];
   },
 

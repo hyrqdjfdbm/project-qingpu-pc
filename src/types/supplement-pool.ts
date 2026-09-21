@@ -73,7 +73,7 @@ export const INVEST_RANGE_LABEL: Record<InvestRange, string> = {
   '10+': '10亿元以上'
 };
 
-/** 街镇选项 */
+/** 纳统归属（街镇 + 区属） */
 export const STREET_TOWN_OPTIONS = [
   '徐泾镇',
   '华新镇',
@@ -86,7 +86,9 @@ export const STREET_TOWN_OPTIONS = [
   '夏阳街道',
   '盈浦街道',
   '香花桥街道',
-  '工业园区'
+  '工业园区',
+  '新城公司',
+  '青发集团'
 ].map((v) => ({ value: v, label: v }));
 
 /** 责任单位选项 */

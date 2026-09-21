@@ -23,7 +23,7 @@ export interface QingpuSupplementForm {
   projectStatus: string;
   territory: string;
   responsibleUnits: string[];
-  agencyUnit?: string;
+  agencyUnit: string;
   projectAttribute: string;
   projectCategory: string;
   constructionSite: string;
@@ -106,98 +106,108 @@ export function isSocialInvestmentCategory(category: string) {
   return category.startsWith('社会投资');
 }
 
-export const QP_TERRITORY_OPTIONS = [
-  '夏阳街道',
-  '盈浦街道',
-  '香花桥街道',
-  '朱家角镇',
-  '练塘镇',
-  '金泽镇',
+function toOptions(values: string[]) {
+  return values.map((v) => ({ value: v, label: v }));
+}
+
+/** 纳统归属下拉：街镇 / 园区国企 / 区属 */
+export const QP_TERRITORY_VALUES = [
   '赵巷镇',
   '徐泾镇',
   '华新镇',
-  '白鹤镇',
   '重固镇',
+  '白鹤镇',
+  '朱家角镇',
+  '练塘镇',
+  '金泽镇',
   '工业园区',
   '新城公司',
-  '青发集团'
-].map((v) => ({ value: v, label: v }));
+  '西虹桥公司',
+  '青发集团',
+  '科创集团',
+  '区属'
+];
 
-export const QP_RESPONSIBLE_UNIT_OPTIONS = [
-  '区发改委',
-  '区经委',
-  '区教育局',
-  '区科技委',
-  '区民宗办',
-  '区公安分局',
-  '区民政局',
-  '区司法局',
-  '区财政局',
-  '区人社局',
-  '区规划资源局',
-  '区生态环境局',
+export const QP_DISTRICT_TERRITORY = '区属';
+
+export const QP_TERRITORY_OPTIONS = toOptions(QP_TERRITORY_VALUES);
+
+const QP_NON_DISTRICT_TERRITORY = new Set(
+  QP_TERRITORY_VALUES.filter((v) => v !== QP_DISTRICT_TERRITORY)
+);
+
+/** 申报单位是否属于区属（不在街镇/园区国企纳统归属名单中的单位） */
+export function isQingpuDistrictUnit(unit: string) {
+  return Boolean(unit) && !QP_NON_DISTRICT_TERRITORY.has(unit);
+}
+
+/** 申报单位与纳统归属是否不一致：非区属直接比对；区属则看申报单位是否属于区属 */
+export function isQingpuBelongingMismatch(applicantUnit: string, territory: string) {
+  if (!applicantUnit || !territory) return false;
+  if (territory === QP_DISTRICT_TERRITORY) {
+    return !isQingpuDistrictUnit(applicantUnit);
+  }
+  return applicantUnit !== territory;
+}
+
+export const QP_RESPONSIBLE_UNIT_VALUES = [
+  '赵巷镇',
+  '徐泾镇',
+  '华新镇',
+  '重固镇',
+  '白鹤镇',
+  '朱家角镇',
+  '练塘镇',
+  '金泽镇',
+  '工业园区',
+  '夏阳街道',
+  '香花桥街道',
+  '盈浦街道',
+  '区绿容局',
+  '区水务局',
   '区建管委',
-  '区交通委',
-  '区农业农村委',
-  '区商务委',
-  '区文旅局',
-  '区卫生健康委',
-  '区退役军人局',
+  '区国动办',
   '区应急局',
-  '区审计局',
-  '区市场监管局',
+  '区重大办',
+  '区卫健委',
+  '区民政局',
+  '区经委',
+  '区商务委',
+  '区房管局',
+  '区科委',
+  '区农委',
+  '区文旅局',
   '区体育局',
-  '区统计局',
-  '区医保局',
-  '区绿化市容局',
-  '区机管局',
-  '区城管执法局',
-  '区民防办',
-  '区地方志办',
-  '区档案局',
+  '区教育局',
+  '区消防支队',
+  '区发改委',
+  '区规划资源局',
+  '区人社局',
+  '区征收中心',
+  '区委办',
+  '区府办',
+  '区公安局',
   '区数据局',
-  '区合作交流办',
-  '区国资委',
-  '区信访办',
-  '区研究室',
-  '区政务服务办',
-  '区委组织部',
-  '区委宣传部',
-  '区委统战部',
-  '区委政法委',
-  '区委社工部',
-  '区委编办',
-  '区委党校',
-  '区总工会',
-  '团区委',
-  '区妇联',
-  '区残联',
-  '区工商联',
-  '区科协',
-  '区红十字会',
-  '区文联',
-  '区侨联',
-  '区法学会',
-  '夏阳街道',
-  '盈浦街道',
-  '香花桥街道',
-  '朱家角镇',
-  '练塘镇',
-  '金泽镇',
-  '赵巷镇',
-  '徐泾镇',
-  '华新镇',
-  '白鹤镇',
-  '重固镇',
-  '工业园区',
+  '区资源利用科',
+  '区征管中心',
   '新城公司',
-  '青发集团'
-].map((v) => ({ value: v, label: v }));
+  '西虹桥公司',
+  '青发集团',
+  '科创集团',
+  '长新公司',
+  '长三投',
+  '文旅集团',
+  '电力公司',
+  '道运中心',
+  '华为专班',
+  '六业专班',
+  '房管公司',
+  '城建中心'
+];
 
-export const QP_AGENCY_UNIT_OPTIONS = ['工业园区', '新城公司', '青发集团'].map((v) => ({
-  value: v,
-  label: v
-}));
+export const QP_RESPONSIBLE_UNIT_OPTIONS = toOptions(QP_RESPONSIBLE_UNIT_VALUES);
+
+export const QP_AGENCY_UNIT_OPTIONS = toOptions(['工业园区', '新城公司', '青发集团']);
 
 export const QP_PROJECT_LEVEL_OPTIONS = [
   { value: '主项目', label: '主项目' },
@@ -246,7 +256,7 @@ export function createEmptyQingpuSupplementForm(): QingpuSupplementForm {
     projectStatus: '',
     territory: undefined as unknown as string,
     responsibleUnits: [],
-    agencyUnit: undefined,
+    agencyUnit: undefined as unknown as string,
     projectAttribute: undefined as unknown as string,
     projectCategory: undefined as unknown as string,
     constructionSite: '',

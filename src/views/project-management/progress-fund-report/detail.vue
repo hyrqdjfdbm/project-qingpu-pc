@@ -271,7 +271,9 @@ function canAuditKind(status?: AuditStatus) {
                       {{ row.cumulative != null ? row.cumulative.toLocaleString() : '—' }}
                     </template>
                     <template v-else-if="column.key === 'status'">
-                      <a-tag :color="AUDIT_STATUS_COLOR[row.status]">{{ AUDIT_STATUS_LABEL[row.status] }}</a-tag>
+                      <a-tag :color="AUDIT_STATUS_COLOR[tagStatus(row.status)]">
+                        {{ AUDIT_STATUS_LABEL[tagStatus(row.status)] }}
+                      </a-tag>
                     </template>
                     <template v-else-if="column.key === 'operation'">
                       <a-button

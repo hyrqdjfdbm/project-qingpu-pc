@@ -1,33 +1,29 @@
 <script setup lang="ts">
 import type { TableColumnType } from 'ant-design-vue';
 import { computed, onMounted, reactive, ref, watch } from 'vue';
-import { qingpuSupplementApi } from '@/api/qingpu-supplement';
-import {
-  canAuditQingpuSupplement,
-  currentUserVersion,
-  getCurrentUser
-} from '@/mock/current-user';
+import { qingpuRestoreApi } from '@/api/qingpu-restore';
+import { canAuditQingpuRestore, currentUserVersion, getCurrentUser } from '@/mock/current-user';
+import type { QingpuAuditChannel } from '@/types/qingpu-supplement';
 import {
   QP_RESPONSIBLE_UNIT_OPTIONS,
-  QP_TERRITORY_OPTIONS,
-  type QingpuAuditChannel,
-  type QingpuSupplementItem
-} from '@/types/qingpu-supplement';
+  QP_STATISTICAL_BELONGING_OPTIONS,
+  type QingpuRestoreItem
+} from '@/types/qingpu-restore';
 import AuditModal from './components/AuditModal.vue';
-import DetailDrawer from './components/DetailDrawer.vue';
+import RestoreDetailModal from './components/RestoreDetailModal.vue';
 
 const loading = ref(false);
-const list = ref<QingpuSupplementItem[]>([]);
+const list = ref<QingpuRestoreItem[]>([]);
 const filters = reactive({
   keyword: '',
-  territory: undefined as string | undefined,
+  statisticalBelonging: undefined as string | undefined,
   responsibleUnit: undefined as string | undefined
 });
 
 const detailOpen = ref(false);
-const detailRecord = ref<QingpuSupplementItem | null>(null);
+const detailRecord = ref<QingpuRestoreItem | null>(null);
 const auditOpen = ref(false);
-const auditRecord = ref<QingpuSupplementItem | null>(null);
+const auditRecord = ref<QingpuRestoreItem | null>(null);
 
 const roleChannel = computed<QingpuAuditChannel | undefined>(() => {
   void currentUserVersion.value;
@@ -37,14 +33,15 @@ const roleChannel = computed<QingpuAuditChannel | undefined>(() => {
   return undefined;
 });
 
-const columns: TableColumnType<QingpuSupplementItem>[] = [
+const columns: TableColumnType<QingpuRestoreItem>[] = [
   { title: '项目名称', key: 'projectName', width: 240, ellipsis: true },
-  { title: '项目代码', key: 'projectCode', width: 150 },
-  { title: '总投资（万元）', key: 'totalInvestment', width: 130, align: 'right' },
-  { title: '纳统归属', key: 'territory', width: 110 },
+  { title: '项目代码', key: 'projectCode', width: 160 },
+  { title: '总投资', key: 'totalInvestment', width: 100, align: 'right' },
+  { title: '纳统归属', key: 'statisticalBelonging', width: 110 },
   { title: '责任单位', key: 'responsibleUnits', width: 160, ellipsis: true },
   { title: '申请人', key: 'applicant', width: 90 },
   { title: '申请时间', key: 'submittedAt', width: 170 },
+  { title: '恢复原因', key: 'restoreReason', width: 200, ellipsis: true },
   { title: '操作', key: 'operation', width: 140, fixed: 'right' }
 ];
 
@@ -58,9 +55,9 @@ async function loadList() {
       list.value = [];
       return;
     }
-    list.value = await qingpuSupplementApi.listAuditTodos({
+    list.value = await qingpuRestoreApi.listAuditTodos({
       keyword: filters.keyword || undefined,
-      territory: filters.territory,
+      statisticalBelonging: filters.statisticalBelonging,
       responsibleUnit: filters.responsibleUnit,
       auditChannel: roleChannel.value
     });
@@ -71,24 +68,13 @@ async function loadList() {
 
 function resetFilters() {
   filters.keyword = '';
-  filters.territory = undefined;
+  filters.statisticalBelonging = undefined;
   filters.responsibleUnit = undefined;
   loadList();
 }
 
-function openDetail(record: QingpuSupplementItem) {
-  detailRecord.value = record;
-  detailOpen.value = true;
-}
-
-function openAudit(record: QingpuSupplementItem) {
-  auditRecord.value = record;
-  auditOpen.value = true;
-}
-
-function canAudit(record: QingpuSupplementItem) {
-  const user = getCurrentUser();
-  return canAuditQingpuSupplement(user.role, record.auditChannel);
+function canAudit(record: QingpuRestoreItem) {
+  return canAuditQingpuRestore(getCurrentUser().role, record.auditChannel);
 }
 
 watch(currentUserVersion, loadList);
@@ -99,9 +85,9 @@ onMounted(loadList);
   <div class="page">
     <div class="page-header">
       <div>
-        <h2 class="page-title">增补审核</h2>
+        <h2 class="page-title">恢复审核</h2>
         <p class="page-desc">
-          区经委审核专员审社会投资项目，区发改审核专员审政府投资/其他项目；通过后项目进入实施库展示。
+          社会投资由区经委审核专员审核，政府投资/其他由区发改审核专员审核；通过后项目重新展示在实施库。
         </p>
       </div>
     </div>
@@ -118,12 +104,12 @@ onMounted(loadList);
         </a-form-item>
         <a-form-item label="纳统归属">
           <a-select
-            v-model:value="filters.territory"
+            v-model:value="filters.statisticalBelonging"
             allow-clear
             show-search
             placeholder="全部"
             style="width: 140px"
-            :options="QP_TERRITORY_OPTIONS"
+            :options="QP_STATISTICAL_BELONGING_OPTIONS"
           />
         </a-form-item>
         <a-form-item label="责任单位">
@@ -151,41 +137,44 @@ onMounted(loadList);
         :columns="columns"
         :data-source="list"
         row-key="id"
-        :scroll="{ x: 1260 }"
+        :scroll="{ x: 1480 }"
         :pagination="{ pageSize: 10, showTotal: (t: number) => `共 ${t} 条` }"
       >
         <template #bodyCell="{ column, record: row }">
           <template v-if="column.key === 'projectName'">
-            {{ (row as QingpuSupplementItem).projectName }}
+            {{ (row as QingpuRestoreItem).projectName }}
           </template>
           <template v-else-if="column.key === 'projectCode'">
-            {{ (row as QingpuSupplementItem).projectCode || '—' }}
+            {{ (row as QingpuRestoreItem).projectCode }}
           </template>
           <template v-else-if="column.key === 'totalInvestment'">
-            {{ (row as QingpuSupplementItem).totalInvestment ?? '—' }}
+            {{ (row as QingpuRestoreItem).totalInvestment ?? '—' }}
           </template>
-          <template v-else-if="column.key === 'territory'">
-            {{ (row as QingpuSupplementItem).territory }}
+          <template v-else-if="column.key === 'statisticalBelonging'">
+            {{ (row as QingpuRestoreItem).statisticalBelonging }}
           </template>
           <template v-else-if="column.key === 'responsibleUnits'">
-            {{ (row as QingpuSupplementItem).responsibleUnits.join('、') }}
+            {{ (row as QingpuRestoreItem).responsibleUnits.join('、') }}
           </template>
           <template v-else-if="column.key === 'applicant'">
-            {{ (row as QingpuSupplementItem).applicant }}
+            {{ (row as QingpuRestoreItem).applicant }}
           </template>
           <template v-else-if="column.key === 'submittedAt'">
-            {{ (row as QingpuSupplementItem).submittedAt || '—' }}
+            {{ (row as QingpuRestoreItem).submittedAt }}
+          </template>
+          <template v-else-if="column.key === 'restoreReason'">
+            {{ (row as QingpuRestoreItem).restoreReason }}
           </template>
           <template v-else-if="column.key === 'operation'">
             <a-space>
-              <a-button type="link" size="small" @click="openDetail(row as QingpuSupplementItem)">
+              <a-button type="link" size="small" @click="detailRecord = row as QingpuRestoreItem; detailOpen = true">
                 详情
               </a-button>
               <a-button
-                v-if="canAudit(row as QingpuSupplementItem)"
+                v-if="canAudit(row as QingpuRestoreItem)"
                 type="link"
                 size="small"
-                @click="openAudit(row as QingpuSupplementItem)"
+                @click="auditRecord = row as QingpuRestoreItem; auditOpen = true"
               >
                 审核
               </a-button>
@@ -195,15 +184,12 @@ onMounted(loadList);
       </a-table>
     </a-card>
 
-    <DetailDrawer v-model:open="detailOpen" :record="detailRecord" />
+    <RestoreDetailModal v-model:open="detailOpen" :record="detailRecord" />
     <AuditModal v-model:open="auditOpen" :record="auditRecord" @done="loadList" />
   </div>
 </template>
 
 <style scoped>
-.page {
-  padding: 0;
-}
 .page-header {
   margin-bottom: 12px;
 }

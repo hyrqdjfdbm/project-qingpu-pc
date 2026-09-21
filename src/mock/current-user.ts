@@ -133,3 +133,42 @@ export function canAuditQingpuSupplement(
   if (channel === 'jingwei') return role === 'jingweiAuditor';
   return role === 'fagaiAuditor';
 }
+
+/** 青浦退库申报：项目专员、管理员 */
+export function canDeclareQingpuWithdraw(role: AppRole) {
+  return role === 'projectSpecialist' || role === 'admin';
+}
+
+/** 青浦退库列表：管理员 / 审核专员看全部，分管领导看待自己审的，专员仅本人 */
+export function canViewAllQingpuWithdraw(role: AppRole) {
+  return (
+    role === 'admin' ||
+    role === 'jingweiAuditor' ||
+    role === 'fagaiAuditor'
+  );
+}
+
+/** 青浦退库审核：区经委/区发改按通道；分管领导看待自己审的；管理员全部 */
+export function canAuditQingpuWithdraw(
+  role: AppRole,
+  channel: 'jingwei' | 'fagai',
+  supervisorId?: string,
+  userId?: string
+) {
+  if (role === 'admin') return true;
+  if (role === 'supervisor') return Boolean(supervisorId && userId && supervisorId === userId);
+  if (channel === 'jingwei') return role === 'jingweiAuditor';
+  return role === 'fagaiAuditor';
+}
+
+/** 青浦退库项目库：申请恢复入库 */
+export function canApplyQingpuRestore(role: AppRole) {
+  return role === 'projectSpecialist' || role === 'admin';
+}
+
+/** 青浦恢复审核：社会投资→区经委；政府投资/其他→区发改；管理员全部 */
+export function canAuditQingpuRestore(role: AppRole, channel: 'jingwei' | 'fagai') {
+  if (role === 'admin') return true;
+  if (channel === 'jingwei') return role === 'jingweiAuditor';
+  return role === 'fagaiAuditor';
+}

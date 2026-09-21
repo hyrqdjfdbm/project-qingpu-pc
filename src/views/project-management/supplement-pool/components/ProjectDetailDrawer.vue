@@ -82,7 +82,7 @@ function label(key: string, value: string | undefined) {
         <a-descriptions-item label="项目简称">{{ record.projectAbbr || '—' }}</a-descriptions-item>
         <a-descriptions-item label="项目代码">{{ record.projectCode }}</a-descriptions-item>
         <a-descriptions-item label="项目类型">{{ label('projectType', record.projectType) }}</a-descriptions-item>
-        <a-descriptions-item label="项目属地">{{ record.projectLocation }}</a-descriptions-item>
+        <a-descriptions-item label="纳统归属">{{ record.projectLocation }}</a-descriptions-item>
         <a-descriptions-item label="总投资（亿元）">{{ record.totalInvestment?.toFixed(2) }}</a-descriptions-item>
         <a-descriptions-item label="责任单位" :span="2">{{ record.responsibleUnits.join('、') }}</a-descriptions-item>
         <a-descriptions-item label="所属库">{{ POOL_STAGE_LABEL[record.poolStage] }}</a-descriptions-item>

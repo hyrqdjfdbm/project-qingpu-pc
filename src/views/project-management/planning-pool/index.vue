@@ -77,7 +77,7 @@ const columns = computed<TableColumnType<SupplementProjectItem>[]>(() => [
     sortOrder: sortState.field === 'projectType' ? sortState.order : null
   },
   {
-    title: '项目属地',
+    title: '纳统归属',
     dataIndex: 'projectLocation',
     key: 'projectLocation',
     width: 100,
@@ -228,7 +228,7 @@ function onTableChange(
         <a-form-item label="投资额" name="investRange">
           <a-select v-model:value="searchForm.investRange" allow-clear placeholder="全部" :options="Object.entries(INVEST_RANGE_LABEL).map(([v,l])=>({value:v,label:l}))" />
         </a-form-item>
-        <a-form-item label="所属街镇" name="streetTown">
+        <a-form-item label="纳统归属" name="streetTown">
           <a-select v-model:value="searchForm.streetTown" allow-clear placeholder="全部" :options="STREET_TOWN_OPTIONS" />
         </a-form-item>
         <a-form-item label="责任单位" name="responsibleUnit">

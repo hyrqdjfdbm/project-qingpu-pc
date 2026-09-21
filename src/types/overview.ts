@@ -12,7 +12,7 @@ export interface ProgressMetric {
 export type UnitCategory = 'street' | 'gov' | 'soe';
 
 export const UNIT_CATEGORY_OPTIONS: { value: UnitCategory; label: string }[] = [
-  { value: 'street', label: '街镇' },
+  { value: 'street', label: '属地（区属）' },
   { value: 'gov', label: '政府机构' },
   { value: 'soe', label: '国企' }
 ];

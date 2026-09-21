@@ -97,7 +97,7 @@ function goBack() {
         </a-button>
         <h1 class="page-header__title">{{ pool?.projectName || '项目详情' }}</h1>
         <p v-if="pool" class="page-header__desc meta-line">
-          项目属地：{{ pool.projectLocation || '—' }}　总投资（亿元）：{{ pool.totalInvestment?.toFixed(2) }}　责任单位：{{
+          纳统归属：{{ pool.projectLocation || '—' }}　总投资（亿元）：{{ pool.totalInvestment?.toFixed(2) }}　责任单位：{{
             pool.responsibleUnits.join('、') || '—'
           }}　建设进度：{{ pool.constructionProgress || '—' }}
         </p>
@@ -119,7 +119,7 @@ function goBack() {
               <a-descriptions-item label="项目类型">
                 {{ enumLabel(PROJECT_TYPE_LABEL, pool.projectType) }}
               </a-descriptions-item>
-              <a-descriptions-item label="项目属地">{{ pool.projectLocation || '—' }}</a-descriptions-item>
+              <a-descriptions-item label="纳统归属">{{ pool.projectLocation || '—' }}</a-descriptions-item>
               <a-descriptions-item label="总投资（亿元）">{{ pool.totalInvestment?.toFixed(2) }}</a-descriptions-item>
               <a-descriptions-item label="责任单位" :span="2">
                 {{ pool.responsibleUnits.join('、') || '—' }}

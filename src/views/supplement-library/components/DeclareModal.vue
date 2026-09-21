@@ -99,7 +99,7 @@ const rules: Record<string, Rule[]> = {
   contactPhone: [{ required: true, message: '请填写联系人电话' }],
   leaderName: [{ required: true, message: '请填写项目负责人' }],
   leaderPhone: [{ required: true, message: '请填写负责人电话' }],
-  territory: [{ required: true, message: '请选择项目属地' }],
+  territory: [{ required: true, message: '请选择纳统归属' }],
   responsibleUnits: [{ required: true, type: 'array', min: 1, message: '请选择项目责任单位' }],
   projectAttribute: [{ required: true, message: '请选择项目属性' }],
   projectCategory: [{ required: true, message: '请选择项目类别' }],
@@ -312,7 +312,7 @@ async function submit() {
             </a-form-item>
           </a-col>
           <a-col :span="12">
-            <a-form-item label="项目属地" name="territory">
+            <a-form-item label="纳统归属" name="territory">
               <a-select
                 v-model:value="form.territory"
                 allow-clear

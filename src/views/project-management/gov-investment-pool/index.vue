@@ -39,7 +39,7 @@ const columns: TableColumnType[] = [
   { title: '项目名称', dataIndex: 'projectName', key: 'projectName', width: 220, ellipsis: true },
   { title: '项目代码', dataIndex: 'projectCode', key: 'projectCode', width: 180 },
   { title: '项目类型', dataIndex: 'projectType', key: 'projectType', width: 110 },
-  { title: '项目属地', dataIndex: 'projectLocation', key: 'projectLocation', width: 100 },
+  { title: '纳统归属', dataIndex: 'projectLocation', key: 'projectLocation', width: 100 },
   { title: '项目性质', dataIndex: 'projectNature', key: 'projectNature', width: 90 },
   { title: '责任单位', dataIndex: 'responsibleUnits', key: 'responsibleUnits', width: 180 },
   { title: '总投资（亿元）', dataIndex: 'totalInvestment', key: 'totalInvestment', width: 130, align: 'right' },
@@ -118,7 +118,7 @@ function onTableChange(pag: { current?: number; pageSize?: number }) {
         <a-form-item label="投资额" name="investRange">
           <a-select v-model:value="searchForm.investRange" allow-clear placeholder="全部" :options="Object.entries(INVEST_RANGE_LABEL).map(([v,l])=>({value:v,label:l}))" />
         </a-form-item>
-        <a-form-item label="所属街镇" name="streetTown">
+        <a-form-item label="纳统归属" name="streetTown">
           <a-select v-model:value="searchForm.streetTown" allow-clear placeholder="全部" :options="STREET_TOWN_OPTIONS" />
         </a-form-item>
         <a-form-item label="责任单位" name="responsibleUnit">

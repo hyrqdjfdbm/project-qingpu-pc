@@ -18,6 +18,7 @@ import {
   MailOutlined,
   PauseCircleOutlined,
   ReadOutlined,
+  RollbackOutlined,
   SolutionOutlined,
   TableOutlined,
   TeamOutlined,
@@ -115,6 +116,24 @@ export const menuGroups: MenuGroup[] = [
         children: [
           { path: '/project-management/qingpu-supplement', title: '项目增补列表', icon: FormOutlined },
           { path: '/project-management/qingpu-supplement/audit', title: '增补审核', icon: SolutionOutlined }
+        ]
+      },
+      {
+        key: 'pm-qingpu-withdraw-biz',
+        title: '退库业务办理',
+        icon: RollbackOutlined,
+        children: [
+          { path: '/project-management/qingpu-withdraw', title: '项目退库申请', icon: RollbackOutlined },
+          { path: '/project-management/qingpu-withdraw/audit', title: '退库审核', icon: SolutionOutlined }
+        ]
+      },
+      {
+        key: 'pm-qingpu-withdraw-pool',
+        title: '青浦退库项目库',
+        icon: PauseCircleOutlined,
+        children: [
+          { path: '/project-management/qingpu-withdraw-pool', title: '退库项目列表', icon: DatabaseOutlined },
+          { path: '/project-management/qingpu-withdraw-pool/audit', title: '恢复审核', icon: SolutionOutlined }
         ]
       },
       { path: '/project-management/planning-pool', title: '谋划库', icon: BulbOutlined },
@@ -277,6 +296,30 @@ export const routes: RouteRecordRaw[] = [
     name: 'SupplementLibraryAuditFinal',
     component: () => import('@/views/supplement-library/audit/final.vue'),
     meta: { title: '增补终审', icon: CheckCircleOutlined, group: 'supplement-library' }
+  },
+  {
+    path: '/project-management/qingpu-withdraw-pool/audit',
+    name: 'QingpuWithdrawPoolAudit',
+    component: () => import('@/views/project-management/qingpu-withdraw-pool/audit.vue'),
+    meta: { title: '恢复审核', icon: SolutionOutlined, group: 'project-management' }
+  },
+  {
+    path: '/project-management/qingpu-withdraw-pool',
+    name: 'QingpuWithdrawPool',
+    component: () => import('@/views/project-management/qingpu-withdraw-pool/index.vue'),
+    meta: { title: '青浦退库项目库', icon: PauseCircleOutlined, group: 'project-management' }
+  },
+  {
+    path: '/project-management/qingpu-withdraw/audit',
+    name: 'QingpuWithdrawAudit',
+    component: () => import('@/views/project-management/qingpu-withdraw/audit.vue'),
+    meta: { title: '退库审核', icon: SolutionOutlined, group: 'project-management' }
+  },
+  {
+    path: '/project-management/qingpu-withdraw',
+    name: 'QingpuWithdrawList',
+    component: () => import('@/views/project-management/qingpu-withdraw/index.vue'),
+    meta: { title: '项目退库申请', icon: RollbackOutlined, group: 'project-management' }
   },
   {
     path: '/project-management/qingpu-supplement/audit',
